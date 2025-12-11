@@ -1,9 +1,7 @@
 import { requireAuth } from '@/lib/auth'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
-import { Team } from '@/models/Team'
 import { computeTeamOverview, type TeamOverviewStats } from '@/lib/analytics/computeTeamOverview'
-import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,65 +9,83 @@ export default async function DashboardPage() {
   requireAuth()
   await connectToDB()
 
-  // For simplicity, pick or create a primary team named "Cloud9"
-  const team = (await Team.findOne({ name: 'Cloud9' })) || (await Team.create({ name: 'Cloud9', region: 'Americas' }))
-  const matches = (await Match.find({ team: team._id }).sort({ date: -1 }).lean()) as unknown as MatchDocument[]
+  const matches = (await Match.find().sort({ date: -1 }).lean()) as unknown as MatchDocument[]
   const overview: TeamOverviewStats = computeTeamOverview(matches)
 
-  return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Team Overview</h1>
+  const mapEntries = Object.entries(overview.mapsPlayed)
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  return (
+    <div className="space-y-10">
+      <header>
+        <h1 className="text-3xl font-semibold text-gray-900">Team Overview</h1>
+        <p className="text-sm text-gray-600 mt-1">Snapshot of recent match performance.</p>
+      </header>
+
+      <div className="grid gap-4 sm:grid-cols-3">
         <SummaryCard title="Matches" value={overview.totalMatches} />
         <SummaryCard title="Wins" value={overview.wins} />
         <SummaryCard title="Losses" value={overview.losses} />
       </div>
 
-      <section>
-        <h2 className="text-lg font-medium mb-2">Recent Matches</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="py-2 pr-4">Date</th>
-                <th className="py-2 pr-4">Map</th>
-                <th className="py-2 pr-4">Opponent</th>
-                <th className="py-2 pr-4">Event</th>
-                <th className="py-2 pr-4">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matches.map((m) => (
-                <tr key={String(m._id)} className="border-b last:border-b-0">
-                  <td className="py-2 pr-4">{new Date(m.date).toLocaleDateString()}</td>
-                  <td className="py-2 pr-4">{m.map}</td>
-                  <td className="py-2 pr-4">{m.opponentName}</td>
-                  <td className="py-2 pr-4">{m.eventName}</td>
-                  <td className="py-2 pr-4">
-                    <Link className="text-blue-600 hover:underline" href={`/matches/${m._id}`}>View</Link>
-                  </td>
-                </tr>
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="border rounded-lg p-4 bg-white shadow-sm">
+          <h2 className="text-lg font-medium text-gray-900 mb-2">Map Breakdown</h2>
+          {mapEntries.length === 0 ? (
+            <p className="text-sm text-gray-600">No matches recorded yet.</p>
+          ) : (
+            <ul className="divide-y text-sm text-gray-800">
+              {mapEntries.map(([mapName, count]) => (
+                <li key={mapName} className="flex items-center justify-between py-2">
+                  <span className="font-medium">{mapName}</span>
+                  <span className="text-gray-600">{count} match{count === 1 ? '' : 'es'}</span>
+                </li>
               ))}
-            </tbody>
-          </table>
+            </ul>
+          )}
+        </div>
+
+        <div className="border rounded-lg p-4 bg-white shadow-sm space-y-2">
+          <h2 className="text-lg font-medium text-gray-900">Side Win Rate</h2>
+          <p className="text-sm text-gray-700">Attack: {overview.attackWinRate * 100}%</p>
+          <p className="text-sm text-gray-700">Defense: {overview.defenseWinRate * 100}%</p>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="border rounded-lg p-4">
-          <h3 className="font-medium mb-2">Attack vs Defense Win Rate</h3>
-          <p className="text-sm text-gray-700">Attack: {overview.attackWinRate}% — Defense: {overview.defenseWinRate}%</p>
+      <section className="border rounded-lg bg-white shadow-sm">
+        <div className="px-4 py-3 border-b">
+          <h2 className="text-lg font-medium text-gray-900">Matches</h2>
         </div>
-        <div className="border rounded-lg p-4">
-          <h3 className="font-medium mb-2">Map Pool Performance</h3>
-          <ul className="text-sm text-gray-700 space-y-1">
-            {overview.mapsPlayed.map((m) => (
-              <li key={m.map}>
-                {m.map}: {m.count}
-              </li>
-            ))}
-          </ul>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm text-gray-900">
+            <thead>
+              <tr className="text-left bg-gray-50">
+                <th className="py-3 px-4 font-semibold">Date</th>
+                <th className="py-3 px-4 font-semibold">Map</th>
+                <th className="py-3 px-4 font-semibold">Opponent</th>
+                <th className="py-3 px-4 font-semibold">Event</th>
+              </tr>
+            </thead>
+            <tbody>
+              {matches.length === 0 ? (
+                <tr>
+                  <td className="py-4 px-4 text-gray-600" colSpan={4}>
+                    No matches found.
+                  </td>
+                </tr>
+              ) : (
+                matches.map((match) => (
+                  <tr key={String(match._id)} className="border-t">
+                    <td className="py-3 px-4 text-gray-700">
+                      {new Date(match.date).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4 font-medium">{match.map}</td>
+                    <td className="py-3 px-4 text-gray-700">{match.opponentName}</td>
+                    <td className="py-3 px-4 text-gray-700">{match.eventName}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -78,9 +94,9 @@ export default async function DashboardPage() {
 
 function SummaryCard({ title, value }: { title: string; value: number }) {
   return (
-    <div className="border rounded-lg p-4">
-      <div className="text-sm text-gray-500">{title}</div>
-      <div className="text-2xl font-semibold">{value}</div>
+    <div className="rounded-lg border bg-white p-4 shadow-sm">
+      <div className="text-sm text-gray-600">{title}</div>
+      <div className="text-3xl font-semibold text-gray-900">{value}</div>
     </div>
   )
 }
