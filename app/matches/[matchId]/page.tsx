@@ -1,26 +1,49 @@
 import { computeMatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
 import { requireAuth } from '@/lib/auth'
-import { connectToDB } from '@/lib/db'
+import { connectToDatabase } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
-import { MatchCoachPanel } from './MatchCoachPanel'
 
 type Params = { params: { matchId: string } }
 
 export default async function MatchDetailPage({ params }: Params) {
   requireAuth()
-  await connectToDB()
-  const match = (await Match.findById(params.matchId).populate('team').lean()) as unknown as MatchDocument | null
+  await connectToDatabase()
+
+  const match = (await Match.findById(params.matchId).lean()) as unknown as MatchDocument | null
+
   if (!match) {
-    return <div>Match not found.</div>
+    return (
+      <div className="rounded-lg border p-6 text-center text-gray-700">
+        Match not found.
+      </div>
+    )
   }
+
   const analytics = computeMatchAnalytics(match)
+  const totalRounds = analytics.rounds
+  const roundsWon = analytics.win ? 13 : Math.max(totalRounds - 13, 0)
+  const roundsLost = analytics.win ? Math.max(totalRounds - 13, 0) : 13
+
+  const players = analytics.topPlayers.map((player) => {
+    const assists =
+      (match as any)?.rawData?.players?.find((p: any) => p.name === player.name)?.assists ?? 0
+    const kd = player.deaths === 0 ? player.kills : player.kills / player.deaths
+
+    return {
+      name: player.name,
+      kills: player.kills,
+      deaths: player.deaths,
+      assists,
+      kd,
+    }
+  })
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Match Detail</h1>
-        <p className="text-gray-700">
-          {new Date(match.date).toLocaleDateString()} • {match.eventName} • {match.map} vs {match.opponentName}
+    <div className="space-y-8">
+      <header className="space-y-1 rounded-lg border bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-semibold text-gray-900">{match.map}</h1>
+        <p className="text-sm text-gray-600">
+          vs {match.opponentName} • {match.eventName} • {new Date(match.date).toLocaleDateString()}
         </p>
       </header>
 
