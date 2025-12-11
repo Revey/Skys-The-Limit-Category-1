@@ -30,3 +30,10 @@ export async function connectToDB() {
   cached!.conn = await cached!.promise
   return cached!.conn
 }
+
+/**
+ * Alias maintained for consistency with documentation and new components.
+ */
+export async function connectToDatabase() {
+  return connectToDB()
+}
