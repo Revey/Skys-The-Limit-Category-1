@@ -1,7 +1,8 @@
+import { computeMatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
 import { requireAuth } from '@/lib/auth'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
-import { computeMatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
+import { MatchCoachPanel } from './MatchCoachPanel'
 
 type Params = { params: { matchId: string } }
 
@@ -23,15 +24,15 @@ export default async function MatchDetailPage({ params }: Params) {
         </p>
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <InfoCard label="Result" value={analytics.win ? 'Win' : 'Loss'} />
         <InfoCard label="Rounds" value={String(analytics.rounds)} />
         <InfoCard label="Attack/Defense" value={`${analytics.attackWinRate}% / ${analytics.defenseWinRate}%`} />
       </section>
 
-      <section className="border rounded-lg p-4">
-        <h2 className="font-medium mb-2">Top Players (placeholder)</h2>
-        <ul className="text-sm text-gray-700 space-y-1">
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-medium">Top Players (placeholder)</h2>
+        <ul className="space-y-1 text-sm text-gray-700">
           {analytics.topPlayers.map((p) => (
             <li key={p.name}>
               {p.name}: {p.kills}/{p.deaths} — rating {p.rating}
@@ -40,17 +41,19 @@ export default async function MatchDetailPage({ params }: Params) {
         </ul>
       </section>
 
-      <section className="border rounded-lg p-4">
-        <h2 className="font-medium mb-2">Notes</h2>
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-medium">Notes</h2>
         <p className="text-sm text-gray-700">{analytics.notes}</p>
       </section>
+
+      <MatchCoachPanel matchId={params.matchId} analyticsSummary={analytics.notes} />
     </div>
   )
 }
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border rounded-lg p-4">
+    <div className="rounded-lg border p-4 shadow-sm">
       <div className="text-sm text-gray-500">{label}</div>
       <div className="text-xl font-semibold">{value}</div>
     </div>
