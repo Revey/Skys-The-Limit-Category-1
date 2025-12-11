@@ -18,12 +18,9 @@
       "@/lib/*": ["lib/*"],
       "@/models/*": ["models/*"],
       "@/config/*": ["config/*"]
-    }
+    },
+    "plugins": [{ "name": "next" }]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
