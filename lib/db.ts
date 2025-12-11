@@ -1,34 +1,24 @@
 import mongoose from 'mongoose'
 
-type MongooseConnection = {
-  conn: typeof mongoose | null
-  promise: Promise<typeof mongoose> | null
-}
-
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongoose: MongooseConnection | undefined
-}
-
-const MONGODB_URI = process.env.MONGODB_URI || ''
-
-if (!MONGODB_URI) {
-  console.warn('MONGODB_URI is not set. Set it in .env.local to enable database access.')
-}
-
-let cached = global._mongoose
-
-if (!cached) {
-  cached = global._mongoose = { conn: null, promise: null }
+let cached: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } = {
+  conn: null,
+  promise: null,
 }
 
 export async function connectToDB() {
-  if (cached!.conn) return cached!.conn
-  if (!cached!.promise) {
-    cached!.promise = mongoose.connect(MONGODB_URI, { dbName: 'c9-stratos' })
+  if (cached.conn) return cached.conn
+
+  if (!cached.promise) {
+    const uri = process.env.MONGODB_URI
+    if (!uri) {
+      throw new Error('MONGODB_URI is not set. Set it in .env.local to enable database access.')
+    }
+
+    cached.promise = mongoose.connect(uri, { dbName: 'c9-stratos' })
   }
-  cached!.conn = await cached!.promise
-  return cached!.conn
+
+  cached.conn = await cached.promise
+  return cached.conn
 }
 
 /**

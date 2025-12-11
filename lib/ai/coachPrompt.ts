@@ -1,29 +1,40 @@
-import type { MatchAnalytics } from '../analytics/computeMatchAnalytics'
+import type { MatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
 
 export function buildCoachPrompt(analytics: MatchAnalytics): string {
-  const { win, rounds, attackWinRate, defenseWinRate, topPlayers, notes } = analytics
-  const teams = (analytics as { teams?: string }).teams ?? 'Team vs Opponent'
-  const map = (analytics as { map?: string }).map ?? 'unspecified map'
-  const event = (analytics as { event?: string }).event ?? 'recent event'
-  const result = win ? 'win' : 'loss'
-
-  const playerStats = topPlayers
+  const playerLines = analytics.players
     .map(
-      (player) =>
-        `- ${player.name}: rating ${player.rating.toFixed(2)}, ${player.kills}K/${player.deaths}D`
+      (p) =>
+        `  - ${p.name} (${p.agent ?? 'Unknown'}): ${p.kills}K / ${p.deaths}D / ${p.assists}A — KD: ${p.kd.toFixed(2)}`
     )
     .join('\n')
 
-  return [
-    'You are an assistant coach generating a concise report.',
-    `Match overview: ${teams} on ${map} at ${event}. Result: ${result} over ${rounds} rounds.`,
-    `Side performance: Attack win rate ${attackWinRate}%, defense win rate ${defenseWinRate}%.`,
-    'Player stats:',
-    playerStats || '- No player stats available.',
-    `Notes: ${notes}`,
-    'Tasks:',
-    '- Identify the top 3 issues for the team based on the summary.',
-    '- Provide 1-2 specific focus points for each player mentioned.',
-    '- Suggest 3 concrete practice priorities for the next scrim.',
-  ].join('\n')
+  return `You are an expert Valorant coach analyzing a professional match.
+
+## Match Summary
+
+- Team: ${analytics.teamName}
+- Opponent: ${analytics.opponentName}
+- Map: ${analytics.map}
+- Event: ${analytics.eventName ?? 'N/A'}
+- Date: ${analytics.date}
+- Result: ${analytics.teamRoundsWon} - ${analytics.teamRoundsLost} (${analytics.roundsPlayed} rounds played)
+
+## Player Performance
+
+${playerLines}
+
+## Coaching Analysis Request
+
+Based on this match data, please provide:
+
+1. **Top 3 Issues for the Team**
+   Identify the three most significant problems or weaknesses the team displayed in this match.
+
+2. **Individual Player Focus Points**
+   For each player, give 1-2 specific areas they should focus on improving based on their performance.
+
+3. **Practice Priorities**
+   Suggest 3 concrete practice drills or focus areas the team should prioritize in their next training session to address the issues identified above.
+
+Please be specific and actionable in your recommendations.`
 }

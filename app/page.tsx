@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { isAuthenticated } from '@/lib/auth'
 
-export default function LandingPage() {
-  const authenticated = isAuthenticated()
+export default async function LandingPage() {
+  const authenticated = await isAuthenticated()
   const primaryCta = authenticated
     ? { href: '/dashboard', label: 'Go to dashboard' }
     : { href: '/login', label: 'Log in to StratOS' }

@@ -20,16 +20,9 @@
     "types": [
       "node"
     ],
+    "baseUrl": ".",
     "paths": {
-      "@/lib/*": [
-        "lib/*"
-      ],
-      "@/models/*": [
-        "models/*"
-      ],
-      "@/config/*": [
-        "config/*"
-      ]
+      "@/*": ["./*"]
     },
     "plugins": [
       {

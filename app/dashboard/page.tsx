@@ -6,10 +6,12 @@ import { computeTeamOverview, type TeamOverviewStats } from '@/lib/analytics/com
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  requireAuth()
+  await requireAuth()
   await connectToDB()
 
   const matches = (await Match.find().sort({ date: -1 }).lean()) as unknown as MatchDocument[]
+  console.log('Dashboard matches count:', matches.length)
+
   const overview: TeamOverviewStats = computeTeamOverview(matches)
 
   const mapEntries = Object.entries(overview.mapsPlayed)
