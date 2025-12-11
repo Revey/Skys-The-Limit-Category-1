@@ -1,6 +1,6 @@
 export const AUTH_CONFIG = {
-  username: 'coach',
-  password: 'stratos',
+  username: 'Cloud9',
+  password: '<redacted>',
   cookieName: 'c9_auth',
 }
 
