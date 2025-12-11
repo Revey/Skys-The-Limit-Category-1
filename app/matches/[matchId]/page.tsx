@@ -49,49 +49,36 @@ export default async function MatchDetailPage({ params }: Params) {
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <InfoCard label="Result" value={analytics.win ? 'Win' : 'Loss'} />
-        <InfoCard label="Rounds Won" value={roundsWon.toString()} />
-        <InfoCard label="Rounds Lost" value={roundsLost.toString()} />
+        <InfoCard label="Rounds" value={String(analytics.rounds)} />
+        <InfoCard label="Attack/Defense" value={`${analytics.attackWinRate}% / ${analytics.defenseWinRate}%`} />
       </section>
 
-      <section className="overflow-hidden rounded-lg border bg-white shadow-sm">
-        <div className="bg-gray-50 px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-800">Players</h2>
-          <p className="text-xs text-gray-500">Kills / deaths / assists with K/D ratio</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">Name</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">Kills</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">Deaths</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">Assists</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">K/D</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {players.map((player) => (
-                <tr key={player.name} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 font-medium text-gray-900">{player.name}</td>
-                  <td className="px-4 py-2 text-gray-700">{player.kills}</td>
-                  <td className="px-4 py-2 text-gray-700">{player.deaths}</td>
-                  <td className="px-4 py-2 text-gray-700">{player.assists}</td>
-                  <td className="px-4 py-2 text-gray-700">{player.kd.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-medium">Top Players (placeholder)</h2>
+        <ul className="space-y-1 text-sm text-gray-700">
+          {analytics.topPlayers.map((p) => (
+            <li key={p.name}>
+              {p.name}: {p.kills}/{p.deaths} — rating {p.rating}
+            </li>
+          ))}
+        </ul>
       </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-medium">Notes</h2>
+        <p className="text-sm text-gray-700">{analytics.notes}</p>
+      </section>
+
+      <MatchCoachPanel matchId={params.matchId} analyticsSummary={analytics.notes} />
     </div>
   )
 }
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
-      <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
-      <div className="text-2xl font-semibold text-gray-900">{value}</div>
+    <div className="rounded-lg border p-4 shadow-sm">
+      <div className="text-sm text-gray-500">{label}</div>
+      <div className="text-xl font-semibold">{value}</div>
     </div>
   )
 }
