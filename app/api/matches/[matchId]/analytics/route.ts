@@ -3,11 +3,12 @@ import { connectToDB } from '@/lib/db'
 import { Match } from '@/models/Match'
 import { computeMatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
 
-type Context = { params: { matchId: string } }
+type Props = { params: Promise<{ matchId: string }> }
 
-export async function GET(_req: Request, ctx: Context) {
+export async function GET(_req: Request, { params }: Props) {
+  const { matchId } = await params
   await connectToDB()
-  const match = await Match.findById(ctx.params.matchId).lean()
+  const match = await Match.findById(matchId).lean()
   if (!match) {
     return NextResponse.json({ message: 'Match not found' }, { status: 404 })
   }

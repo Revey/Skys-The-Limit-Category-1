@@ -7,7 +7,7 @@ const PlayerStatsSchema = new Schema(
     agent: { type: String, required: false },
     kills: { type: Number, required: true },
     deaths: { type: Number, required: true },
-    assists: { type: Number, required: true },
+    assists: { type: Number, required: false, default: 0 },
     rating: { type: Number, required: false },
   },
   { _id: false }
@@ -43,7 +43,7 @@ export type PlayerStats = {
   agent?: string
   kills: number
   deaths: number
-  assists: number
+  assists?: number
   rating?: number
 }
 

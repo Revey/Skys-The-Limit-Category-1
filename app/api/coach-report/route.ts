@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDB } from '@/lib/db'
 import { Match } from '@/models/Match'
-import { computeMatchAnalytics, type MatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
-import { buildCoachPrompt } from '@/lib/ai/coachPrompt'
-import { generateCoachReport } from '@/lib/ai/llmClient'
+import { computeMatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
+import {
+  buildCoachPrompt,
+  generateCoachingReport,
+  type MatchAnalytics,
+} from '@/lib/ai/coach'
 
 type RequestBody = {
   matchId?: string
@@ -23,7 +26,24 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Match not found' }, { status: 404 })
       }
 
-      analytics = computeMatchAnalytics(match as any)
+      const fullAnalytics = computeMatchAnalytics(match as any)
+      // Convert to coach.ts MatchAnalytics format (without assists/agent)
+      analytics = {
+        teamName: fullAnalytics.teamName,
+        opponentName: fullAnalytics.opponentName,
+        map: fullAnalytics.map,
+        eventName: fullAnalytics.eventName,
+        date: fullAnalytics.date,
+        roundsPlayed: fullAnalytics.roundsPlayed,
+        teamRoundsWon: fullAnalytics.teamRoundsWon,
+        teamRoundsLost: fullAnalytics.teamRoundsLost,
+        players: fullAnalytics.players.map((p) => ({
+          name: p.name,
+          kills: p.kills,
+          deaths: p.deaths,
+          kd: p.kd,
+        })),
+      }
     } else if (body.analytics) {
       analytics = body.analytics
     } else {
@@ -34,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = buildCoachPrompt(analytics)
-    const report = await generateCoachReport(prompt)
+    const report = await generateCoachingReport(analytics)
 
     return NextResponse.json({ prompt, report })
   } catch (error) {

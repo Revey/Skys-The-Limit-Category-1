@@ -2,7 +2,7 @@ import { computeMatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
 import { requireAuth } from '@/lib/auth'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
-import { MatchCoachPanel } from './MatchCoachPanel'
+import { CoachPanel } from './CoachPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,10 +49,8 @@ export default async function MatchDetailPage({ params }: Props) {
             <thead>
               <tr className="bg-gray-50 text-left">
                 <th className="px-4 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Agent</th>
                 <th className="px-4 py-3 font-semibold text-center">K</th>
                 <th className="px-4 py-3 font-semibold text-center">D</th>
-                <th className="px-4 py-3 font-semibold text-center">A</th>
                 <th className="px-4 py-3 font-semibold text-center">KD</th>
               </tr>
             </thead>
@@ -60,10 +58,8 @@ export default async function MatchDetailPage({ params }: Props) {
               {analytics.players.map((player) => (
                 <tr key={player.name} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">{player.name}</td>
-                  <td className="px-4 py-3 text-gray-700">{player.agent ?? '-'}</td>
                   <td className="px-4 py-3 text-center">{player.kills}</td>
                   <td className="px-4 py-3 text-center">{player.deaths}</td>
-                  <td className="px-4 py-3 text-center">{player.assists}</td>
                   <td className="px-4 py-3 text-center font-medium">
                     {player.kd.toFixed(2)}
                   </td>
@@ -74,7 +70,7 @@ export default async function MatchDetailPage({ params }: Props) {
         </div>
       </section>
 
-      <MatchCoachPanel matchId={matchId} />
+      <CoachPanel matchId={matchId} />
     </div>
   )
 }

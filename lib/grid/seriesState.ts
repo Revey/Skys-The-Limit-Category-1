@@ -7,7 +7,6 @@ export interface SeriesStatePlayer {
   name: string
   kills: number
   deaths: number
-  assists: number
 }
 
 export interface SeriesStateTeam {
@@ -46,7 +45,6 @@ const SERIES_STATE_QUERY = `
           name
           kills
           deaths
-          assists
         }
       }
       games {
@@ -63,7 +61,6 @@ const SERIES_STATE_QUERY = `
             name
             kills
             deaths
-            assists
           }
         }
       }
@@ -85,7 +82,6 @@ type SeriesStateResponse = {
         name: string
         kills: number
         deaths: number
-        assists: number
       }>
     }>
     games: Array<{
@@ -102,7 +98,6 @@ type SeriesStateResponse = {
           name: string
           kills: number
           deaths: number
-          assists: number
         }>
       }>
     }>
@@ -131,7 +126,6 @@ export async function fetchSeriesState(seriesId: string): Promise<SeriesState> {
         name: p.name,
         kills: p.kills,
         deaths: p.deaths,
-        assists: p.assists,
       })),
     })),
     games: state.games.map((g) => ({
@@ -146,7 +140,6 @@ export async function fetchSeriesState(seriesId: string): Promise<SeriesState> {
           name: p.name,
           kills: p.kills,
           deaths: p.deaths,
-          assists: p.assists,
         })),
       })),
     })),

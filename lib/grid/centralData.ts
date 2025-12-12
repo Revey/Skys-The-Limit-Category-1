@@ -66,19 +66,26 @@ export async function getSeriesForTeamAndTitle(
     }
   `
 
-  for (let page = 0; page < 10; page++) {
-    const res = await gridGraphQL<{
-      allSeries: {
-        pageInfo: { hasNextPage: boolean; endCursor: string | null }
-        edges: { node: any }[]
-      }
-    }>(CENTRAL_DATA_URL, query, {
-      first: PAGE_SIZE,
-      after,
-    })
+  type AllSeriesResponse = {
+    allSeries: {
+      pageInfo: { hasNextPage: boolean; endCursor: string | null }
+      edges: Array<{ node: any }>
+    }
+  }
 
-    const { pageInfo, edges } = res.allSeries
-    nodes.push(...edges.map((e) => e.node))
+  for (let page = 0; page < 10; page++) {
+    const res: AllSeriesResponse = await gridGraphQL<AllSeriesResponse>(
+      CENTRAL_DATA_URL,
+      query,
+      {
+        first: PAGE_SIZE,
+        after,
+      }
+    )
+
+    const pageInfo = res.allSeries.pageInfo
+    const edges = res.allSeries.edges
+    nodes.push(...edges.map((e: { node: any }) => e.node))
 
     if (!pageInfo.hasNextPage || !pageInfo.endCursor) break
     after = pageInfo.endCursor
