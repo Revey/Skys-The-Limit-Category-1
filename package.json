@@ -13,7 +13,8 @@
     "grid:list-series": "tsx scripts/listGridSeries.ts",
     "grid:test-stats": "tsx scripts/testStatsFeed.ts",
     "grid:find-cloud9": "tsx scripts/findCloud9TeamId.ts",
-    "grid:ingest": "tsx scripts/ingestGridSeries.ts"
+    "grid:ingest": "tsx scripts/ingestGridSeries.ts",
+    "py:ingest": "python3 scripts/ingest.py"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
