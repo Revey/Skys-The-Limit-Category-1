@@ -9,6 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seedSampleMatches.ts",
+    "seed:demo": "tsx scripts/seed/seed_demo.ts",
+    "smoke": "tsx scripts/smoke/api_smoke_test.ts",
     "ingest:grid": "tsx scripts/ingestGridSeries.ts",
     "grid:list-series": "tsx scripts/listGridSeries.ts",
     "grid:test-stats": "tsx scripts/testStatsFeed.ts",

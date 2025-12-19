@@ -29,3 +29,14 @@ coverage/
 
 # Debug
 .turbo
+
+# GRID cache and archive data
+# Note: Main cache is on E:\grid-cache\hot (outside repo)
+# But ignore any local grid-cache directories
+grid-cache/
+grid-archive/
+*.jsonl
+manifest_extracted.json
+
+# Python script outputs
+scripts/py/out/

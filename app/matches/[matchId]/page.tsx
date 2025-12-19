@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
 import { CoachPanel } from './CoachPanel'
+import { EvidencePanel } from './EvidencePanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,6 +70,8 @@ export default async function MatchDetailPage({ params }: Props) {
           </table>
         </div>
       </section>
+
+      <EvidencePanel matchId={matchId} />
 
       <CoachPanel matchId={matchId} />
     </div>

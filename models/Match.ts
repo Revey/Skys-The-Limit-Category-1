@@ -33,6 +33,23 @@ const MatchSchema = new Schema(
     attackRoundsWon: { type: Number, required: false },
     defenseRoundsWon: { type: Number, required: false },
     players: { type: [PlayerStatsSchema], required: false, default: undefined },
+
+    // Analytics fields (optional, backward compatible)
+    analytics: {
+      type: {
+        evidence_v1: { type: Schema.Types.Mixed, required: false },
+        evidence_v1_meta: {
+          type: {
+            extractedAt: { type: String, required: false },
+            version: { type: String, required: false },
+            extractor: { type: String, required: false },
+          },
+          required: false,
+        },
+      },
+      required: false,
+      default: undefined,
+    },
   },
   { timestamps: true }
 )
@@ -45,6 +62,53 @@ export type PlayerStats = {
   deaths: number
   assists?: number
   rating?: number
+}
+
+export type EvidenceV1 = {
+  meta: {
+    seriesId: string
+    extractedAt: string
+    version: string
+    maxLinesProcessed?: number
+    isoThreshold?: number
+  }
+  games: Array<{
+    gameId: string
+    mapName: string
+    sequenceNumber: number
+  }>
+  rounds: Array<{
+    gameId: string
+    roundNumber: number
+    winnerTeamId: string
+    winType?: string
+    firstBlood?: {
+      killerId: string
+      victimId: string
+      killerTeamId: string
+      timestamp: string
+    }
+    hadPlant: boolean
+    hadDefuse: boolean
+  }>
+  kills: unknown[]
+  plants: unknown[]
+  defuses: unknown[]
+  players: Array<{
+    playerId: string
+    teamId: string
+    firstBloods: number
+    firstDeaths: number
+    kills: number
+    deaths: number
+    kd: number
+    isolatedDeathsCount: number
+  }>
+  derived: {
+    mapsStats: unknown[]
+    firstBloodStats: unknown[]
+    plantStats: unknown[]
+  }
 }
 
 export type MatchDocument = {
@@ -66,6 +130,16 @@ export type MatchDocument = {
   attackRoundsWon?: number
   defenseRoundsWon?: number
   players?: PlayerStats[]
+
+  // Analytics fields (optional)
+  analytics?: {
+    evidence_v1?: EvidenceV1
+    evidence_v1_meta?: {
+      extractedAt: string
+      version: string
+      extractor?: string
+    }
+  }
 
   createdAt: Date
   updatedAt: Date
