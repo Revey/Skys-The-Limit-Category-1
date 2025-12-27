@@ -33,6 +33,7 @@ const MatchSchema = new Schema(
     attackRoundsWon: { type: Number, required: false },
     defenseRoundsWon: { type: Number, required: false },
     players: { type: [PlayerStatsSchema], required: false, default: undefined },
+    startTime: { type: Date, required: false }, // Real match start time from manifest
 
     // Analytics fields (optional, backward compatible)
     analytics: {
@@ -71,6 +72,9 @@ export type EvidenceV1 = {
     version: string
     maxLinesProcessed?: number
     isoThreshold?: number
+    // Added by filterEvidenceByGame when filtering to a specific map
+    filteredForGame?: string
+    mapName?: string
   }
   games: Array<{
     gameId: string
@@ -82,6 +86,7 @@ export type EvidenceV1 = {
     roundNumber: number
     winnerTeamId: string
     winType?: string
+    winnerSide?: string
     firstBlood?: {
       killerId: string
       victimId: string
@@ -94,8 +99,49 @@ export type EvidenceV1 = {
   kills: unknown[]
   plants: unknown[]
   defuses: unknown[]
+  clutchSituations?: Array<{
+    gameId: string
+    roundNumber: number
+    playerId: string
+    playerName?: string
+    teamId: string
+    situation: string
+    opponentsAlive: number
+    won: boolean
+  }>
+  economyRounds?: Array<{
+    gameId: string
+    roundNumber: number
+    teamId: string
+    teamName: string
+    avgLoadoutValue: number
+    totalLoadoutValue: number
+    economyTier: 'full_buy' | 'half_buy' | 'eco' | 'save'
+    previousRoundWon: boolean | null
+    roundWon: boolean
+    playerLoadouts?: Array<{
+      playerId: string
+      loadoutValue: number
+    }>
+  }>
+  abilityUses?: Array<{
+    gameId: string
+    roundNumber: number
+    timestamp: string
+    playerId: string
+    teamId: string
+    agent: string
+    abilityId: string
+    abilityName: string
+    position?: {
+      x: number
+      y: number
+      z?: number
+    }
+  }>
   players: Array<{
     playerId: string
+    playerName?: string
     teamId: string
     firstBloods: number
     firstDeaths: number
@@ -104,10 +150,169 @@ export type EvidenceV1 = {
     kd: number
     isolatedDeathsCount: number
   }>
+  agentCompositions?: {
+    [gameId: string]: Array<{
+      playerId: string
+      playerName?: string
+      teamId: string
+      agent: string
+    }>
+  }
   derived: {
     mapsStats: unknown[]
     firstBloodStats: unknown[]
     plantStats: unknown[]
+    siteStats?: Array<{
+      site: string
+      attackStats: {
+        [teamId: string]: {
+          teamId: string
+          teamName: string
+          plants: number
+          postPlantWins: number
+          postPlantWinRate: number
+        }
+      }
+      defenseStats: {
+        [teamId: string]: {
+          teamId: string
+          teamName: string
+          defenseAttempts: number
+          defenseWins: number
+          defenseWinRate: number
+        }
+      }
+    }>
+    clutchStats?: Array<{
+      playerId: string
+      playerName: string
+      teamId: string
+      teamName: string
+      clutchAttempts: number
+      clutchWins: number
+      clutchRate: number
+      breakdown: {
+        [situation: string]: {
+          attempts: number
+          wins: number
+        }
+      }
+    }>
+    economyStats?: Array<{
+      teamId: string
+      teamName: string
+      byTier: {
+        [tier: string]: {
+          rounds: number
+          wins: number
+          winRate: number
+        }
+      }
+      afterLoss: {
+        [tier: string]: {
+          rounds: number
+          wins: number
+          winRate: number
+        }
+      }
+      afterWin: {
+        [tier: string]: {
+          rounds: number
+          wins: number
+          winRate: number
+        }
+      }
+      forceAfterPistolLoss?: {
+        attempts: number
+        wins: number
+        winRate: number
+      }
+    }>
+    abilityStats?: Array<{
+      playerId: string
+      playerName: string
+      teamId: string
+      teamName: string
+      totalAbilityUses: number
+      roundsPlayed: number
+      abilitiesPerRound: number
+      agentBreakdown: Array<{
+        agent: string
+        totalUses: number
+        abilities: Array<{
+          name: string
+          uses: number
+        }>
+      }>
+    }>
+    tradeKills?: Array<{
+      gameId: string
+      roundNumber: number
+      originalKillTimestamp: string
+      tradeTimestamp: string
+      timeDelta: number
+      originalVictimId: string
+      originalKillerId: string
+      traderId: string
+      traderTeamId: string
+    }>
+    tradeStats?: Array<{
+      playerId: string
+      playerName: string
+      teamId: string
+      teamName: string
+      deaths: number
+      deathsTraded: number
+      untradedDeaths: number
+      tradedRate: number
+      tradesGotten: number
+    }>
+    openingDuelStats?: Array<{
+      playerId: string
+      playerName: string
+      teamId: string
+      teamName: string
+      // Overall
+      openingKills: number
+      openingDeaths: number
+      openingDuels: number
+      openingDuelWinRate: number
+      // Attack side
+      attackOpeningKills: number
+      attackOpeningDeaths: number
+      attackOpeningDuels: number
+      attackOpeningWinRate: number
+      // Defense side
+      defenseOpeningKills: number
+      defenseOpeningDeaths: number
+      defenseOpeningDuels: number
+      defenseOpeningWinRate: number
+      // Conversion
+      openingKillConversion: number  // % of opening kills leading to round wins
+      openingDeathSurvival: number   // % of opening deaths where team still won
+    }>
+    multiKillRounds?: Array<{
+      gameId: string
+      roundNumber: number
+      playerId: string
+      playerName: string
+      teamId: string
+      teamName: string
+      kills: number
+      type: '2k' | '3k' | '4k' | 'ace'
+    }>
+    multiKillStats?: Array<{
+      playerId: string
+      playerName: string
+      teamId: string
+      teamName: string
+      twoKs: number
+      threeKs: number
+      fourKs: number
+      aces: number
+      totalMultiKills: number
+      impactScore: number
+    }>
   }
 }
 
@@ -130,6 +335,7 @@ export type MatchDocument = {
   attackRoundsWon?: number
   defenseRoundsWon?: number
   players?: PlayerStats[]
+  startTime?: Date // Real match start time from manifest
 
   // Analytics fields (optional)
   analytics?: {

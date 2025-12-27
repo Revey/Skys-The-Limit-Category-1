@@ -40,3 +40,5 @@ manifest_extracted.json
 
 # Python script outputs
 scripts/py/out/
+
+.mcp.json

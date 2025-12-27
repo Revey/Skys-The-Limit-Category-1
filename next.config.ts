@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: [],
   },
+  images: {
+    // Allow unoptimized images for local logo files
+    unoptimized: true,
+  },
 }
 
 export default nextConfig

@@ -1,6 +1,7 @@
 import './globals.css'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { Navigation } from '@/components/layout/Navigation'
 
 export const metadata = {
   title: 'C9 StratOS',
@@ -9,34 +10,21 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
-        <header className="border-b bg-white/80 backdrop-blur">
-          <div className="container-base py-4 flex items-center justify-between">
-            <Link href="/" className="text-xl font-semibold tracking-tight">
-              C9 StratOS
-            </Link>
-            <div className="flex items-center gap-3 text-sm text-gray-700">
-              <Link href="/dashboard" className="hover:text-black">
-                Dashboard
-              </Link>
-              <Link href="/matches" className="hover:text-black">
-                Matches
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 font-medium hover:border-gray-400 hover:text-black"
-              >
-                Logout
-              </Link>
-            </div>
-          </div>
-        </header>
+    <html lang="en" className="dark">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body className="min-h-screen flex flex-col antialiased">
+        <Navigation />
         <main className="flex-1">
-          <div className="container-base py-12">{children}</div>
+          {children}
         </main>
-        <footer className="border-t bg-white/80">
-          <div className="container-base py-4 text-sm text-gray-500">© {new Date().getFullYear()} C9 StratOS</div>
+        <footer className="border-t border-gray-800 bg-black/50 backdrop-blur">
+          <div className="container-base py-4 text-sm text-gray-500">
+            © {new Date().getFullYear()} Cloud9 StratOS — AI-Powered Valorant Analytics
+          </div>
         </footer>
       </body>
     </html>

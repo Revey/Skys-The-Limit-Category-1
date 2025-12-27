@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as RequestBody
     let analytics: MatchAnalytics
+    let evidence = null
 
     if (body.matchId) {
       await connectToDB()
@@ -27,23 +28,11 @@ export async function POST(req: NextRequest) {
       }
 
       const fullAnalytics = computeMatchAnalytics(match as any)
-      // Convert to coach.ts MatchAnalytics format (without assists/agent)
-      analytics = {
-        teamName: fullAnalytics.teamName,
-        opponentName: fullAnalytics.opponentName,
-        map: fullAnalytics.map,
-        eventName: fullAnalytics.eventName,
-        date: fullAnalytics.date,
-        roundsPlayed: fullAnalytics.roundsPlayed,
-        teamRoundsWon: fullAnalytics.teamRoundsWon,
-        teamRoundsLost: fullAnalytics.teamRoundsLost,
-        players: fullAnalytics.players.map((p) => ({
-          name: p.name,
-          kills: p.kills,
-          deaths: p.deaths,
-          kd: p.kd,
-        })),
-      }
+      // Use the full analytics directly
+      analytics = fullAnalytics
+
+      // Extract evidence if available
+      evidence = (match as any)?.analytics?.evidence_v1 || null
     } else if (body.analytics) {
       analytics = body.analytics
     } else {
@@ -53,8 +42,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const prompt = buildCoachPrompt(analytics)
-    const report = await generateCoachingReport(analytics)
+    const prompt = buildCoachPrompt(analytics, evidence)
+    const report = await generateCoachingReport(analytics, evidence)
 
     return NextResponse.json({ prompt, report })
   } catch (error) {
