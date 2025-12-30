@@ -4,10 +4,9 @@ import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
 import { TeamLogo } from '@/components/ui/TeamLogo'
 import { normalizeTeamName, getTeamKey } from '@/lib/teamUtils'
+import { getMapsStats, CLOUD9_TEAM_ID } from '@/lib/types/evidence'
 
 export const dynamic = 'force-dynamic'
-
-const CLOUD9_TEAM_ID = '79'
 
 interface OpponentStats {
   name: string
@@ -20,9 +19,9 @@ interface OpponentStats {
 
 function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
   const c9Matches = matches.filter(match => {
-    const mapsStats = match.analytics?.evidence_v1?.derived?.mapsStats
-    if (!mapsStats) return false
-    return mapsStats.some((stat: any) => stat.teamId === CLOUD9_TEAM_ID)
+    const mapsStats = getMapsStats(match.analytics?.evidence_v1)
+    if (mapsStats.length === 0) return false
+    return mapsStats.some(stat => stat.teamId === CLOUD9_TEAM_ID)
   })
 
   // Use normalized team key for grouping
@@ -39,7 +38,7 @@ function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
     const evidence = match.analytics?.evidence_v1
     if (!evidence) continue
 
-    const mapsStats = evidence.derived?.mapsStats || []
+    const mapsStats = getMapsStats(evidence)
     const seriesId = match.gridSeriesId
 
     let rawOpponentName = 'Unknown'
@@ -123,6 +122,12 @@ export default async function MatchesPage() {
 
   const matches = (await Match.aggregate([
     { $match: { 'analytics.evidence_v1': { $exists: true } } },
+    {
+      $project: {
+        gridSeriesId: 1,
+        'analytics.evidence_v1.derived.mapsStats': 1
+      }
+    },
     { $sort: { _id: -1 } }
   ])) as unknown as MatchDocument[]
 
@@ -160,7 +165,7 @@ export default async function MatchesPage() {
                 </div>
 
                 {/* Team Name */}
-                <h3 className="text-center text-lg font-semibold text-white mb-4 group-hover:text-blue-400 transition-colors">
+                <h3 className="text-center text-lg font-semibold text-white mb-4 group-hover:text-[#00aeef] transition-colors">
                   {opponent.name}
                 </h3>
 
@@ -174,7 +179,7 @@ export default async function MatchesPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400 text-sm">Maps</span>
-                    <span className="text-blue-400">
+                    <span className="text-[#00aeef]">
                       {opponent.mapsWon} - {opponent.mapsLost}
                     </span>
                   </div>

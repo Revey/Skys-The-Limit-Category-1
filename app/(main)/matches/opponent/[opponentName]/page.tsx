@@ -3,12 +3,11 @@ import { requireAuth } from '@/lib/auth'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
 import { TeamLogo } from '@/components/ui/TeamLogo'
-import { normalizeTeamName, getTeamKey } from '@/lib/teamUtils'
+import { normalizeTeamName } from '@/lib/teamUtils'
+import { getMapsStats, CLOUD9_TEAM_ID } from '@/lib/types/evidence'
 import { ChevronLeft, TrendingUp, TrendingDown, Calendar, Trophy } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
-
-const CLOUD9_TEAM_ID = '79'
 
 // Tournament name mapping based on tournamentId patterns from manifest
 // These IDs correspond to VCT events
@@ -103,6 +102,14 @@ export default async function OpponentDetailPage({ params }: Props) {
 
   const matches = (await Match.aggregate([
     { $match: { 'analytics.evidence_v1': { $exists: true } } },
+    {
+      $project: {
+        _id: 1,
+        gridSeriesId: 1,
+        'analytics.evidence_v1.derived.mapsStats': 1,
+        'analytics.evidence_v1.games': 1
+      }
+    },
     { $sort: { _id: -1 } }
   ])) as unknown as MatchDocument[]
 
@@ -112,11 +119,11 @@ export default async function OpponentDetailPage({ params }: Props) {
     const evidence = match.analytics?.evidence_v1
     if (!evidence) continue
 
-    const mapsStats = evidence.derived?.mapsStats || []
+    const mapsStats = getMapsStats(evidence)
     const games = evidence.games || []
     const seriesId = match.gridSeriesId
 
-    const hasC9 = mapsStats.some((stat: any) => stat.teamId === CLOUD9_TEAM_ID)
+    const hasC9 = mapsStats.some(stat => stat.teamId === CLOUD9_TEAM_ID)
     if (!hasC9) continue
 
     let foundOpponent = ''
@@ -220,7 +227,7 @@ export default async function OpponentDetailPage({ params }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="card card-hover p-4 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
             <p className="text-gray-400 text-sm">Series Played</p>
-            <p className="text-3xl font-bold text-blue-400">{series.length}</p>
+            <p className="text-3xl font-bold text-[#00aeef]">{series.length}</p>
           </div>
           <div className="card card-hover p-4 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
             <p className="text-gray-400 text-sm">Series Won</p>
@@ -249,7 +256,7 @@ export default async function OpponentDetailPage({ params }: Props) {
               <Link
                 key={s.seriesId}
                 href={`/matches/${s.matchId}`}
-                className={`card overflow-hidden animate-fade-in-up block group cursor-pointer hover:border-blue-500/50 transition-all ${
+                className={`card overflow-hidden animate-fade-in-up block group cursor-pointer hover:border-[#00aeef]/50 transition-all ${
                   s.isWin ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'
                 }`}
                 style={{ animationDelay: `${300 + index * 50}ms` }}
@@ -257,7 +264,7 @@ export default async function OpponentDetailPage({ params }: Props) {
                 {/* Tournament & Date Header */}
                 <div className="px-5 py-3 bg-black/40 border-b border-gray-800 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-blue-400">
+                    <div className="flex items-center gap-2 text-[#00aeef]">
                       <Trophy className="w-4 h-4" />
                       <span className="text-sm font-medium">{s.tournament}</span>
                     </div>
@@ -284,7 +291,7 @@ export default async function OpponentDetailPage({ params }: Props) {
                       {s.c9MapsWon} - {s.opponentMapsWon}
                     </span>
                   </div>
-                  <div className="text-gray-500 group-hover:text-blue-400 transition-colors">
+                  <div className="text-gray-500 group-hover:text-[#00aeef] transition-colors">
                     View Details →
                   </div>
                 </div>

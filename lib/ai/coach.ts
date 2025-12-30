@@ -294,19 +294,24 @@ Guidelines:
 - Compare attack vs defense opening performance to identify role fit.
 - Low opening death survival indicates poor team support when entry player dies.
 
-Output format (MUST follow this structure):
+Output format (STRICTLY follow this markdown structure with ## headers):
 
 ## EVIDENCE
-- List 3-5 key data points from the match stats above
-- Focus on patterns like first blood conversion, plant success rate, isolated deaths, site-specific performance, clutch performance, economy management, ability usage, multi-kill impact, opening duels, agent compositions, trade kill patterns
+- List 3-5 key data points with specific numbers from the stats above
+- Include player names and percentages where relevant (e.g., "Xeppaa achieved 64% opening duel win rate (7K/4D)")
+- Focus on: first blood conversion, plant success, isolated deaths, clutch performance, economy, trades, opening duels
 
 ## INSIGHT
-- 2-4 bullet points analyzing what these patterns reveal about team play
-- Connect the evidence to tactical decisions or positioning issues
+- 2-4 bullet points explaining what these patterns mean for team performance
+- Connect evidence to tactical decisions, positioning issues, or coordination gaps
+- Highlight both strengths to maintain and weaknesses to address
 
 ## RECOMMENDATION
-- 3-5 actionable practice items or focus areas for the next session
-- Be specific: reference situations from the evidence (e.g., "work on post-plant setups given only 68% win rate")
+- 3-5 specific, actionable practice items for the coaching staff to implement
+- Reference the evidence (e.g., "Given the 25% eco round win rate, develop specific eco strats for each site")
+- Prioritize by impact: what changes would most improve round win rate?
+
+IMPORTANT: Use exactly "## EVIDENCE", "## INSIGHT", "## RECOMMENDATION" as section headers (two hashtags, not three).
   `.trim()
 }
 

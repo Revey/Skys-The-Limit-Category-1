@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronLeft, TrendingUp, TrendingDown } from 'lucide-react'
+import { ChevronLeft, TrendingUp, TrendingDown, Trophy, Calendar } from 'lucide-react'
 import { getMapImage } from '@/lib/mapImages'
 import { normalizeTeamName } from '@/lib/teamUtils'
 import { CoachPanel } from '@/components/matches/CoachPanel'
@@ -22,8 +22,8 @@ interface SeriesData {
   matchId: string
   seriesId: string
   opponentName: string
-  eventName: string
-  date: string
+  tournamentName: string
+  matchDate: string
   c9MapsWon: number
   opponentMapsWon: number
   seriesWon: boolean
@@ -77,18 +77,26 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
 
           {/* Header - Series Info */}
           <header className="card p-6 backdrop-blur-xl bg-gray-900/70">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <span className="text-xl font-bold text-white capitalize">
-                  {selectedGame?.mapName.charAt(0) || '?'}
-                </span>
-              </div>
+            <div className="flex items-center justify-between">
+              {/* Left side - Map name and match info */}
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-white capitalize">{selectedGame?.mapName || 'Unknown'}</h1>
-                <p className="text-gray-400">
-                  vs <span className="text-blue-400">{normalizeTeamName(seriesData.opponentName)}</span> • {seriesData.eventName} • {seriesData.date}
-                </p>
+                <div className="flex items-center gap-4 mt-2">
+                  <span className="text-gray-400">
+                    vs <span className="text-[#00aeef]">{normalizeTeamName(seriesData.opponentName)}</span>
+                  </span>
+                  <div className="flex items-center gap-2 text-[#00aeef]">
+                    <Trophy className="w-4 h-4" />
+                    <span className="text-sm">{seriesData.tournamentName}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm">{seriesData.matchDate}</span>
+                  </div>
+                </div>
               </div>
+              
+              {/* Right side - Series result */}
               <div className="text-right">
                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold ${
                   seriesData.seriesWon 
@@ -120,7 +128,7 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
                     onClick={() => setSelectedGameId(game.gameId)}
                     className={`relative overflow-hidden rounded-lg border p-4 text-left transition-all ${
                       isSelected 
-                        ? 'border-blue-500 bg-blue-500/20 ring-2 ring-blue-500/50' 
+                        ? 'border-[#00aeef] bg-[#00aeef]/20 ring-2 ring-[#00aeef]/50' 
                         : 'border-gray-700 bg-black/40 hover:border-gray-500 hover:bg-black/60'
                     }`}
                   >
@@ -148,7 +156,7 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
                     
                     {/* Selected indicator */}
                     {isSelected && (
-                      <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
+                      <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-[#00aeef] animate-pulse" />
                     )}
                   </button>
                 )
@@ -157,7 +165,7 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
           </div>
 
           {/* Stats for Selected Map */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="card card-hover p-6 backdrop-blur-xl bg-gray-900/70">
               <div className="text-sm text-gray-400 mb-2">Rounds Won</div>
               <div className="text-4xl font-bold text-green-400">{selectedGame?.c9Rounds || 0}</div>
@@ -166,12 +174,6 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
               <div className="text-sm text-gray-400 mb-2">Rounds Lost</div>
               <div className="text-4xl font-bold text-red-400">{selectedGame?.opponentRounds || 0}</div>
             </div>
-            <div className="card card-hover p-6 backdrop-blur-xl bg-gray-900/70">
-              <div className="text-sm text-gray-400 mb-2">Total Rounds</div>
-              <div className="text-4xl font-bold text-blue-400">
-                {(selectedGame?.c9Rounds || 0) + (selectedGame?.opponentRounds || 0)}
-              </div>
-            </div>
           </div>
 
           {/* Player Stats for Selected Map */}
@@ -179,7 +181,7 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
             <section className="card backdrop-blur-xl bg-gray-900/70">
               <div className="px-6 py-4 border-b border-gray-800">
                 <h2 className="text-xl font-semibold text-white">
-                  Player Stats - <span className="capitalize text-blue-400">{selectedGame?.mapName}</span>
+                  Player Stats - <span className="capitalize text-[#00aeef]">{selectedGame?.mapName}</span>
                 </h2>
               </div>
               <div className="overflow-x-auto">

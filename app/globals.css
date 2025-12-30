@@ -5,7 +5,7 @@
 :root {
   --bg: 0 0 0;
   --fg: 255 255 255;
-  --blue-accent: 59 130 246;
+  --blue-accent: 0 174 239;
   --cyan-accent: 6 182 212;
 }
 
@@ -26,7 +26,7 @@ body {
 }
 
 .glass-hover {
-  @apply hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300;
+  @apply hover:border-[#00aeef]/30 hover:shadow-lg hover:shadow-[#00aeef]/10 transition-all duration-300;
 }
 
 /* Card styles */
@@ -35,7 +35,7 @@ body {
 }
 
 .card-hover {
-  @apply hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300;
+  @apply hover:border-[#00aeef]/50 hover:shadow-lg hover:shadow-[#00aeef]/20 transition-all duration-300;
 }
 
 /* Container */
@@ -45,11 +45,11 @@ body {
 
 /* Text gradients */
 .text-gradient-blue {
-  @apply bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-[#00aeef] to-cyan-400 bg-clip-text text-transparent;
 }
 
 /* Stat card colors */
-.stat-blue { @apply text-blue-400; }
+.stat-blue { @apply text-[#00aeef]; }
 .stat-green { @apply text-green-400; }
 .stat-red { @apply text-red-400; }
 .stat-cyan { @apply text-cyan-400; }
@@ -73,7 +73,7 @@ body {
 }
 
 .progress-fill-defense {
-  @apply h-full bg-gradient-to-r from-blue-500 to-cyan-500;
+  @apply h-full bg-gradient-to-r from-[#00aeef] to-cyan-500;
 }
 
 .progress-fill-win {
@@ -95,11 +95,11 @@ body {
 
 /* Button styles */
 .btn-primary {
-  @apply px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all shadow-lg shadow-blue-500/30;
+  @apply px-6 py-3 bg-gradient-to-r from-[#00aeef] to-[#0098d1] hover:from-[#0098d1] hover:to-[#0082b8] text-white rounded-lg transition-all shadow-lg shadow-[#00aeef]/30;
 }
 
 .btn-secondary {
-  @apply px-6 py-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg transition-all;
+  @apply px-6 py-3 bg-[#00aeef]/10 hover:bg-[#00aeef]/20 border border-[#00aeef]/30 text-[#00aeef] rounded-lg transition-all;
 }
 
 .btn-danger {
@@ -108,7 +108,7 @@ body {
 
 /* Input styles */
 .input-field {
-  @apply w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none transition-all;
+  @apply w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-[#00aeef] focus:outline-none transition-all;
 }
 
 /* Scrollbar styling */

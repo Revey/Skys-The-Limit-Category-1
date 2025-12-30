@@ -33,7 +33,7 @@ export function MapSelector({ games, selectedGameId, onSelectGame }: MapSelector
               onClick={() => onSelectGame(game.gameId)}
               className={`relative overflow-hidden rounded-lg border p-4 text-left transition-all ${
                 isSelected 
-                  ? 'border-blue-500 bg-blue-500/20 ring-2 ring-blue-500/50' 
+                  ? 'border-[#00aeef] bg-[#00aeef]/20 ring-2 ring-[#00aeef]/50' 
                   : 'border-gray-700 bg-black/30 hover:border-gray-600 hover:bg-black/50'
               }`}
             >
@@ -60,7 +60,7 @@ export function MapSelector({ games, selectedGameId, onSelectGame }: MapSelector
               
               {/* Selected indicator */}
               {isSelected && (
-                <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-blue-500" />
+                <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-[#00aeef]" />
               )}
             </button>
           )

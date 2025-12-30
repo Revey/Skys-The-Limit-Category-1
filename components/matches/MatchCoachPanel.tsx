@@ -49,7 +49,7 @@ export function MatchCoachPanel({ matchId }: MatchCoachPanelProps) {
             type="button"
             onClick={handleGenerateReport}
             disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+            className="rounded-md bg-[#0082b8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#006d9e] disabled:cursor-not-allowed disabled:bg-[#00aeef]"
           >
             {loading ? 'Generating...' : 'Generate coaching report'}
           </button>
