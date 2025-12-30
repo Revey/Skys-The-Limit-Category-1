@@ -1,6 +1,6 @@
 import { requireAuth } from '@/lib/auth'
 import { connectToDB } from '@/lib/db'
-import { DashboardStats as DashboardStatsModel } from '@/models/DashboardStats'
+import { DashboardStats as DashboardStatsModel, DashboardStatsDocument } from '@/models/DashboardStats'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   console.log('[DASHBOARD] DB connection completed in', Date.now() - startTime, 'ms')
 
   // Fetch pre-computed dashboard stats - single document query
-  const dashboardStatsDoc = await DashboardStatsModel.findOne({ _id: 'cloud9' }).lean()
+  const dashboardStatsDoc = await DashboardStatsModel.findOne({ _id: 'cloud9' }).lean() as DashboardStatsDocument | null
 
   console.log('[DASHBOARD] Stats fetch completed in', Date.now() - startTime, 'ms')
 

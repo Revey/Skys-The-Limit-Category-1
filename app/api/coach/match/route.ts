@@ -305,13 +305,13 @@ function filterEvidenceByGame(evidence: any, gameId: string): any {
     totalAbilityUses: s.totalAbilityUses,
     roundsPlayed: roundCount,
     abilitiesPerRound: roundCount > 0 ? Math.round((s.totalAbilityUses / roundCount) * 10) / 10 : 0,
-    agentBreakdown: Array.from(s.agentBreakdown.entries()).map(([agent, abilities]: [string, any]) => ({
+    agentBreakdown: (Array.from(s.agentBreakdown.entries()) as [string, Map<string, number>][]).map(([agent, abilities]) => ({
       agent,
-      totalUses: Array.from(abilities.values()).reduce((sum: number, n: number) => sum + n, 0),
+      totalUses: Array.from(abilities.values()).reduce((sum, n) => sum + n, 0),
       abilities: Array.from(abilities.entries())
-        .map(([name, uses]: [string, number]) => ({ name, uses }))
-        .sort((a: any, b: any) => b.uses - a.uses)
-    })).sort((a: any, b: any) => b.totalUses - a.totalUses)
+        .map(([name, uses]) => ({ name, uses }))
+        .sort((a, b) => b.uses - a.uses)
+    })).sort((a, b) => (b.totalUses as number) - (a.totalUses as number))
   })).sort((a, b) => b.totalAbilityUses - a.totalAbilityUses)
 
   // Recompute multi-kill stats for this game
