@@ -233,6 +233,173 @@ ${evidence.games.map((game: any, idx: number) => {
 }).filter(Boolean).join('\n') || 'No data'}
 `
     }
+
+    // Sprint 1: Add weapon stats if available
+    if (evidence?.derived?.weaponStats && evidence.derived.weaponStats.length > 0) {
+      evidenceSection += `
+Weapon Performance (Top 5 players):
+${evidence.derived.weaponStats.slice(0, 5).map((p: any) => {
+  const topWeapon = Object.entries(p.byWeapon || {})
+    .sort((a: any, b: any) => b[1].kills - a[1].kills)[0]
+  const topWeaponStr = topWeapon ? `${topWeapon[0]}: ${(topWeapon[1] as any).kills}` : 'N/A'
+  return `- ${p.playerName}: ${p.totalKills} kills [Primary: ${topWeaponStr}]${p.operatorKills > 0 ? ` (${p.operatorKills} Op kills)` : ''}`
+}).join('\n')}
+`
+    }
+
+    // Sprint 1: Add engagement range stats if available
+    if (evidence?.derived?.engagementStats && evidence.derived.engagementStats.length > 0) {
+      evidenceSection += `
+Engagement Range Analysis:
+${evidence.derived.engagementStats.slice(0, 5).map((p: any) => {
+  const ranges = Object.entries(p.byRange || {})
+    .map(([range, stats]: [string, any]) => `${range}: ${stats.kills}K/${stats.deaths}D`)
+    .join(', ')
+  return `- ${p.playerName}: Preferred ${p.preferredRange} [${ranges}]`
+}).join('\n')}
+`
+    }
+
+    // Sprint 1: Add tempo stats if available
+    if (evidence?.derived?.tempoStats && evidence.derived.tempoStats.length > 0) {
+      evidenceSection += `
+Round Tempo Analysis:
+${evidence.derived.tempoStats.map((t: any) => {
+  return `- ${t.teamName}:
+  Attack: Avg plant at ${t.attackStats.avgTimeToPlant}s, ${(t.attackStats.latePlantRate * 100).toFixed(0)}% late plants
+  Defense: Avg first kill at ${t.defenseStats.avgTimeToFirstKill}s, ${(t.defenseStats.earlyAggressionRate * 100).toFixed(0)}% early aggression`
+}).join('\n')}
+`
+    }
+
+    // Sprint 1: Add save round stats if available
+    if (evidence?.derived?.saveRoundStats && evidence.derived.saveRoundStats.length > 0) {
+      evidenceSection += `
+Save Round Discipline:
+${evidence.derived.saveRoundStats.map((s: any) =>
+  `- ${s.teamName}: ${s.saveRounds} saves, ${s.exitFragsAttempted} exit frags, ${s.saveRoundWins} unexpected wins`
+).join('\n')}
+`
+    }
+
+    // Sprint 1: Add anti-eco stats if available
+    if (evidence?.derived?.antiEcoStats && evidence.derived.antiEcoStats.length > 0) {
+      evidenceSection += `
+Anti-Eco Performance:
+${evidence.derived.antiEcoStats.map((a: any) => {
+  const problematic = a.problematicWeapons?.slice(0, 2).map((w: any) => w.weapon).join(', ') || 'none'
+  return `- ${a.teamName}: ${(a.antiEcoWinRate * 100).toFixed(0)}% win rate (${a.antiEcoWins}/${a.antiEcoRounds}), ${a.deathsToEco} deaths to eco [Problem weapons: ${problematic}]`
+}).join('\n')}
+`
+    }
+
+    // Sprint 1: Add half stats if available
+    if (evidence?.derived?.halfStats && evidence.derived.halfStats.length > 0) {
+      evidenceSection += `
+Half-by-Half Performance:
+${evidence.derived.halfStats.map((h: any) =>
+  `- ${h.teamName}: 1st half (${h.firstHalf.side}): ${h.firstHalf.roundsWon}-${h.firstHalf.roundsLost} (${(h.firstHalf.winRate * 100).toFixed(0)}%), 2nd half: ${h.secondHalf.roundsWon}-${h.secondHalf.roundsLost} (${(h.secondHalf.winRate * 100).toFixed(0)}%) [${h.adaptation.improved ? 'Improved' : 'Declined'}: ${h.adaptation.delta > 0 ? '+' : ''}${(h.adaptation.delta * 100).toFixed(0)}%]`
+).join('\n')}
+`
+    }
+
+    // Sprint 2: Add ability impact stats if available
+    if (evidence?.derived?.abilityImpactStats && evidence.derived.abilityImpactStats.length > 0) {
+      evidenceSection += `
+Utility Impact (Flash Assists & Kill Setups):
+${evidence.derived.abilityImpactStats
+  .filter((p: any) => p.totalAbilityUses >= 5)
+  .sort((a: any, b: any) => b.flashAssists + b.utilityKillSetups - (a.flashAssists + a.utilityKillSetups))
+  .slice(0, 5)
+  .map((p: any) => {
+    const topAbility = Object.entries(p.abilityBreakdown || {})
+      .sort((a: any, b: any) => b[1].correlatedKills - a[1].correlatedKills)[0]
+    const topAbilityStr = topAbility ? `${topAbility[0]}: ${(topAbility[1] as any).correlatedKills} kills` : 'N/A'
+    return `- ${p.playerName}: ${p.flashAssists} flash assists (${(p.flashAssistRate * 100).toFixed(0)}%), ${p.utilityKillSetups} utility setups [Best: ${topAbilityStr}]`
+  }).join('\n')}
+`
+    }
+
+    // Sprint 2: Add team utility coordination stats if available
+    if (evidence?.derived?.teamUtilityStats && evidence.derived.teamUtilityStats.length > 0) {
+      evidenceSection += `
+Team Utility Coordination:
+${evidence.derived.teamUtilityStats.map((t: any) =>
+  `- ${t.teamName}: ${t.totalAbilityUses} abilities used, ${t.correlatedKills} kills after utility (${(t.utilityCoordinationScore * 100).toFixed(0)}% coordination score)${t.flashUses > 0 ? `, ${t.flashAssists}/${t.flashUses} flash assists` : ''}${t.topFlashPlayer ? ` [Top flash: ${t.topFlashPlayer}]` : ''}`
+).join('\n')}
+`
+    }
+
+    // Sprint 2: Add post-plant positioning stats if available
+    if (evidence?.derived?.postPlantStats) {
+      const postPlant = evidence.derived.postPlantStats as any
+
+      if (postPlant.siteStats && postPlant.siteStats.length > 0) {
+        evidenceSection += `
+Post-Plant Site Analysis:
+${postPlant.siteStats.map((s: any) =>
+  `- ${s.site}: ${s.postPlantKills}K/${s.postPlantDeaths}D (${s.kdRatio.toFixed(2)} KD) in post-plant situations`
+).join('\n')}
+`
+      }
+
+      if (postPlant.playerStats && postPlant.playerStats.length > 0) {
+        const topPostPlant = postPlant.playerStats
+          .filter((p: any) => (p.postPlantKills + p.postPlantDeaths) >= 3)
+          .sort((a: any, b: any) => b.postPlantKD - a.postPlantKD)
+          .slice(0, 5)
+
+        if (topPostPlant.length > 0) {
+          evidenceSection += `
+Post-Plant Player Performance:
+${topPostPlant.map((p: any) =>
+  `- ${p.playerName}: ${p.postPlantKills}K/${p.postPlantDeaths}D (${p.postPlantKD.toFixed(2)} KD) in post-plant`
+).join('\n')}
+`
+        }
+      }
+    }
+
+    // Sprint 2: Add matchup stats if available
+    if (evidence?.derived?.matchupStats) {
+      const matchups = evidence.derived.matchupStats as any
+
+      if (matchups.playerSummary && matchups.playerSummary.length > 0) {
+        // Find players with strong nemesis/victim relationships
+        const playersWithNemesis = matchups.playerSummary
+          .filter((p: any) => p.nemesis && Math.abs(p.nemesisDifferential) >= 2)
+          .slice(0, 3)
+
+        const playersWithVictim = matchups.playerSummary
+          .filter((p: any) => p.victim && p.victimDifferential >= 2)
+          .slice(0, 3)
+
+        if (playersWithNemesis.length > 0 || playersWithVictim.length > 0) {
+          evidenceSection += `
+Player Matchup Analysis:
+${playersWithNemesis.length > 0 ? `Vulnerable matchups (nemesis):
+${playersWithNemesis.map((p: any) =>
+  `- ${p.playerName} vs ${p.nemesis}: ${p.nemesisDifferential} differential (struggling)`
+).join('\n')}` : ''}
+${playersWithVictim.length > 0 ? `
+Favorable matchups (victims):
+${playersWithVictim.map((p: any) =>
+  `- ${p.playerName} vs ${p.victim}: +${p.victimDifferential} differential (dominant)`
+).join('\n')}` : ''}
+`
+        }
+      }
+    }
+
+    // Sprint 2: Add map control stats if available
+    if (evidence?.derived?.mapControlStats && evidence.derived.mapControlStats.length > 0) {
+      evidenceSection += `
+Map Control & Aggression:
+${evidence.derived.mapControlStats.map((m: any) =>
+  `- ${m.teamName}: ${m.aggressiveOpenings} aggressive openings (${(m.aggressiveOpeningWinRate * 100).toFixed(0)}% win rate), early kills ${m.earlyKills}K/${m.earlyDeaths}D (${m.earlyKillDifferential > 0 ? '+' : ''}${m.earlyKillDifferential})`
+).join('\n')}
+`
+    }
   }
 
   // Add attack/defense stats if available
@@ -293,13 +460,26 @@ Guidelines:
 - Analyze opening duel patterns: players with high opening kill rates on attack may be good entry fraggers.
 - Compare attack vs defense opening performance to identify role fit.
 - Low opening death survival indicates poor team support when entry player dies.
+- When weapon stats are provided, identify if players are effective with their preferred weapons and if there are weapon choices mismatched to economic situations.
+- Operator specialists with high opening kills indicate strong AWP presence. Low operator kills might suggest the role isn't being utilized.
+- When engagement range stats are provided, identify if players are fighting at optimal distances for their roles. Entry fraggers should win close-range fights.
+- When tempo stats are provided, analyze attack pacing. High late-plant rates with low win rates suggest execution timing issues.
+- Fast executes with high success indicate well-drilled set plays. Slow tempo with losses may indicate indecision or poor mid-round calls.
+- When save round stats are provided, evaluate discipline. Many exit frag attempts but low success suggests over-aggression on saves.
+- When anti-eco stats are provided, identify if the team is losing rounds they should win. Deaths to specific weapons (e.g., Spectre) indicate positioning issues.
+- When half stats are provided, compare adaptation between halves. Teams that improve in the second half show good mid-match adjustments.
+- When utility impact stats are provided, identify players who create kill opportunities for teammates through flashes and other utility. High flash assist rates indicate strong team coordination.
+- When team utility coordination stats are provided, compare teams' ability to convert utility usage into kills. Higher coordination scores indicate better-drilled executes.
+- When post-plant stats are provided, analyze site-specific performance in post-plant scenarios. Negative KD on a site may indicate poor positioning or callouts.
+- When player matchup stats are provided, identify nemesis relationships (players consistently losing to specific opponents) and favorable matchups (players dominating specific opponents). Use this for strategic player positioning.
+- When map control stats are provided, evaluate early-round aggression success. Teams with high early kill differentials have strong map control. Low aggressive opening win rates suggest overcommitting.
 
 Output format (STRICTLY follow this markdown structure with ## headers):
 
 ## EVIDENCE
 - List 3-5 key data points with specific numbers from the stats above
 - Include player names and percentages where relevant (e.g., "Xeppaa achieved 64% opening duel win rate (7K/4D)")
-- Focus on: first blood conversion, plant success, isolated deaths, clutch performance, economy, trades, opening duels
+- Focus on: first blood conversion, plant success, isolated deaths, clutch performance, economy, trades, opening duels, weapon performance, engagement range, tempo, save round discipline, anti-eco performance, half adaptation, utility impact, post-plant positioning, player matchups, map control
 
 ## INSIGHT
 - 2-4 bullet points explaining what these patterns mean for team performance

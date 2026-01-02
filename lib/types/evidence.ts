@@ -51,6 +51,7 @@ export interface KillEvent {
   victimId: string
   victimTeamId: string
   weapon?: string
+  weaponCategory?: string  // Sprint 1: rifle, smg, sniper, etc.
   isHeadshot?: boolean
   assistIds?: string[]
   isIsolated?: boolean
@@ -58,6 +59,9 @@ export interface KillEvent {
   nearestTeammateDistance?: number | null
   killerPosition?: Position
   victimPosition?: Position
+  // Sprint 1: Engagement analysis
+  killDistance?: number | null
+  engagementRange?: string  // close, medium, long
 }
 
 export interface PlantEvent {
@@ -333,6 +337,243 @@ export interface MultiKillStat {
 }
 
 // =============================================================================
+// Sprint 1: New Analytics Types
+// =============================================================================
+
+export interface WeaponStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  totalKills: number
+  byWeapon: {
+    [weapon: string]: {
+      kills: number
+      percentage: number
+    }
+  }
+  byCategory: {
+    [category: string]: {
+      kills: number
+      percentage: number
+    }
+  }
+  operatorKills: number
+  operatorOpeningKills: number
+}
+
+export interface EngagementStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  byRange: {
+    [range: string]: {
+      kills: number
+      deaths: number
+      winRate: number
+    }
+  }
+  preferredRange: string
+  avgKillDistance: number
+}
+
+export interface TempoStat {
+  teamId: string
+  teamName: string
+  attackStats: {
+    avgTimeToPlant: number
+    latePlantRate: number
+    latePlantWinRate: number
+    fastExecuteWinRate: number
+  }
+  defenseStats: {
+    avgTimeToFirstKill: number
+    earlyAggressionRate: number
+  }
+  byTempo: {
+    [tempo: string]: {
+      rounds: number
+      wins: number
+      winRate: number
+    }
+  }
+}
+
+export interface SaveRoundStat {
+  teamId: string
+  teamName: string
+  saveRounds: number
+  exitFragsAttempted: number
+  saveRoundWins: number
+  disciplineScore: number
+}
+
+export interface AntiEcoStat {
+  teamId: string
+  teamName: string
+  antiEcoRounds: number
+  antiEcoWins: number
+  antiEcoWinRate: number
+  deathsToEco: number
+  deathsToForce: number
+  problematicWeapons: Array<{
+    weapon: string
+    deaths: number
+  }>
+}
+
+export interface HalfStat {
+  teamId: string
+  teamName: string
+  gameId: string
+  firstHalf: {
+    side: 'attack' | 'defense' | null
+    roundsWon: number
+    roundsLost: number
+    winRate: number
+    pistolWon: boolean | null
+  }
+  secondHalf: {
+    side: 'attack' | 'defense' | null
+    roundsWon: number
+    roundsLost: number
+    winRate: number
+    pistolWon: boolean | null
+  }
+  adaptation: {
+    improved: boolean
+    delta: number
+  }
+}
+
+// =============================================================================
+// Sprint 2: Tactical Depth & Ability Analytics Types
+// =============================================================================
+
+export interface AbilityCorrelation {
+  gameId: string
+  roundNumber: number
+  abilityTimestamp: string
+  killTimestamp: string
+  timeDelta: number
+  abilityUserId: string
+  abilityUserName: string
+  abilityId: string
+  abilityName: string
+  abilityCategory: 'flash' | 'smoke' | 'damage' | 'recon' | 'mobility' | 'other'
+  killerId: string
+  killerName: string
+  victimId: string
+  isSamePlayer: boolean
+  isTeammateKill: boolean
+}
+
+export interface AbilityImpactStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  totalAbilityUses: number
+  flashAssists: number
+  flashAssistRate: number
+  selfKillsAfterAbility: number
+  teammateKillsAfterAbility: number
+  utilityKillSetups: number
+  abilityBreakdown: {
+    [abilityId: string]: {
+      uses: number
+      correlatedKills: number
+      effectiveness: number
+    }
+  }
+}
+
+export interface TeamUtilityStat {
+  teamId: string
+  teamName: string
+  totalAbilityUses: number
+  correlatedKills: number
+  utilityCoordinationScore: number
+  flashUses: number
+  flashAssists: number
+  topFlashPlayer: string | null
+  mostEffectiveUtility: string | null
+}
+
+export interface PostPlantSiteStat {
+  mapName: string
+  site: string
+  postPlantKills: number
+  postPlantDeaths: number
+  kdRatio: number
+}
+
+export interface PostPlantPlayerStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  postPlantKills: number
+  postPlantDeaths: number
+  postPlantKD: number
+  avgKillPosition: { avgX: number; avgY: number } | null
+  avgDeathPosition: { avgX: number; avgY: number } | null
+}
+
+export interface PostPlantStats {
+  siteStats: PostPlantSiteStat[]
+  playerStats: PostPlantPlayerStat[]
+}
+
+export interface MatchupEntry {
+  kills: number
+  deaths: number
+  differential: number
+}
+
+export interface MatchupDetail {
+  opponentId: string
+  opponentName: string
+  kills: number
+  deaths: number
+  differential: number
+}
+
+export interface MatchupPlayerSummary {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  favorableMatchups: MatchupDetail[]
+  unfavorableMatchups: MatchupDetail[]
+  nemesis: string | null
+  nemesisDifferential: number
+  victim: string | null
+  victimDifferential: number
+}
+
+export interface MatchupStats {
+  matrix: {
+    [playerId: string]: {
+      [opponentId: string]: MatchupEntry
+    }
+  }
+  playerSummary: MatchupPlayerSummary[]
+}
+
+export interface MapControlStat {
+  teamId: string
+  teamName: string
+  aggressiveOpenings: number
+  aggressiveOpeningWins: number
+  aggressiveOpeningWinRate: number
+  earlyKills: number
+  earlyDeaths: number
+  earlyKillDifferential: number
+}
+
+// =============================================================================
 // Main Evidence Structure
 // =============================================================================
 
@@ -349,6 +590,20 @@ export interface EvidenceDerived {
   openingDuelStats?: OpeningDuelStat[]
   multiKillRounds?: MultiKillRound[]
   multiKillStats?: MultiKillStat[]
+  // Sprint 1: New analytics
+  weaponStats?: WeaponStat[]
+  engagementStats?: EngagementStat[]
+  tempoStats?: TempoStat[]
+  saveRoundStats?: SaveRoundStat[]
+  antiEcoStats?: AntiEcoStat[]
+  halfStats?: HalfStat[]
+  // Sprint 2: Tactical Depth & Ability Analytics
+  abilityCorrelations?: AbilityCorrelation[]
+  abilityImpactStats?: AbilityImpactStat[]
+  teamUtilityStats?: TeamUtilityStat[]
+  postPlantStats?: PostPlantStats
+  matchupStats?: MatchupStats
+  mapControlStats?: MapControlStat[]
 }
 
 export interface EvidenceV1 {
