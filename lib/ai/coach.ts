@@ -400,6 +400,170 @@ ${evidence.derived.mapControlStats.map((m: any) =>
 ).join('\n')}
 `
     }
+
+    // Sprint 3: Add pistol stats if available
+    if (evidence?.derived?.pistolStats && evidence.derived.pistolStats.length > 0) {
+      evidenceSection += `
+Pistol & Bonus Round Analysis:
+${evidence.derived.pistolStats.map((p: any) => {
+  const pr = p.pistolRounds || {}
+  const bc = p.bonusConversion || {}
+  const ab = p.antiBonus || {}
+  const pistolWinPct = ((pr.winRate || 0) * 100).toFixed(0)
+  const bonusConvPct = ((bc.bonusConversionRate || 0) * 100).toFixed(0)
+  const attackPct = ((pr.attackPistolWinRate || 0) * 100).toFixed(0)
+  const defensePct = ((pr.defensePistolWinRate || 0) * 100).toFixed(0)
+  const topFragger = p.pistolTopFragger ? ` [Top: ${p.pistolTopFragger.playerName} - ${p.pistolTopFragger.pistolKills} kills]` : ''
+  return `- ${p.teamName}: ${pr.won || 0}/${pr.played || 0} pistols won (${pistolWinPct}%), ${bonusConvPct}% bonus conversion [Attack: ${attackPct}%, Defense: ${defensePct}%]${topFragger}`
+}).join('\n')}
+`
+    }
+
+    // Sprint 3: Add man advantage stats if available
+    if (evidence?.derived?.manAdvantageStats && evidence.derived.manAdvantageStats.length > 0) {
+      evidenceSection += `
+Man Advantage Conversion:
+${evidence.derived.manAdvantageStats.map((m: any) => {
+  const ts = m.throwStats || {}
+  const cs = m.comebackStats || {}
+  const throwPct = ((ts.throwRate || 0) * 100).toFixed(0)
+  return `- ${m.teamName}: ${ts.totalThrows || 0} throws (${throwPct}% rate), ${cs.totalComebacks || 0} comebacks${ts.worstThrow ? ` [Worst: ${ts.worstThrow}]` : ''}${cs.bestComeback ? ` [Best comeback: ${cs.bestComeback}]` : ''}`
+}).join('\n')}
+`
+    }
+
+    // Sprint 3: Add retake stats if available
+    if (evidence?.derived?.retakeStats && evidence.derived.retakeStats.length > 0) {
+      evidenceSection += `
+Retake Performance:
+${evidence.derived.retakeStats.map((r: any) => {
+  const winPct = ((r.retakeWinRate || 0) * 100).toFixed(0)
+  const siteBreakdown = Object.entries(r.bySite || {})
+    .map(([site, stats]: [string, any]) => `${site}: ${stats.successes}/${stats.attempts}`)
+    .join(', ')
+  const topDefuser = r.topDefuser ? ` [Top defuser: ${r.topDefuser.playerName} - ${r.topDefuser.clutchDefuses}]` : ''
+  return `- ${r.teamName}: ${r.retakeSuccesses}/${r.totalRetakeAttempts} retakes won (${winPct}%) [${siteBreakdown}]${topDefuser}`
+}).join('\n')}
+`
+    }
+
+    // Sprint 3: Add entry stats if available
+    if (evidence?.derived?.entryStats && evidence.derived.entryStats.length > 0) {
+      const topEntryPlayers = evidence.derived.entryStats
+        .filter((e: any) => e.entryAttempts >= 3)
+        .sort((a: any, b: any) => (b.entrySuccessRate || 0) - (a.entrySuccessRate || 0))
+        .slice(0, 5)
+
+      if (topEntryPlayers.length > 0) {
+        evidenceSection += `
+Entry Fragger Performance:
+${topEntryPlayers.map((e: any) => {
+  const successPct = ((e.entrySuccessRate || 0) * 100).toFixed(0)
+  const killPct = ((e.entryKillRate || 0) * 100).toFixed(0)
+  const flashInfo = e.entriesWithFlash > 0 ? ` [Flash: ${((e.flashSupportedWinRate || 0) * 100).toFixed(0)}% vs Dry: ${((e.dryEntryWinRate || 0) * 100).toFixed(0)}%]` : ''
+  return `- ${e.playerName}: ${e.entryKills}K/${e.entryDeaths}D (${killPct}% kill rate), trade rate ${((e.tradeRate || 0) * 100).toFixed(0)}%${flashInfo}`
+}).join('\n')}
+`
+      }
+    }
+
+    // Sprint 3: Add spike carrier stats if available
+    if (evidence?.derived?.spikeCarrierStats && evidence.derived.spikeCarrierStats.length > 0) {
+      evidenceSection += `
+Spike Carrier Analysis:
+${evidence.derived.spikeCarrierStats.map((s: any) => {
+  const plantPct = ((s.plantRate || 0) * 100).toFixed(0)
+  const deathPct = ((s.carrierDeathRate || 0) * 100).toFixed(0)
+  const topPlanters = Object.entries(s.byPlayer || {})
+    .sort((a: any, b: any) => (b[1].successfulPlants || 0) - (a[1].successfulPlants || 0))
+    .slice(0, 2)
+    .map(([_, data]: [string, any]) => `${data.playerName}: ${data.successfulPlants}`)
+    .join(', ')
+  return `- ${s.teamName}: ${plantPct}% plant rate, ${s.carrierDeathsBeforePlant || 0} carrier deaths (${deathPct}%), ${s.spikeDrops || 0} spike drops [${topPlanters}]`
+}).join('\n')}
+`
+    }
+
+    // Sprint 4: Add streak & momentum stats if available
+    if (evidence?.derived?.streakStats && evidence.derived.streakStats.length > 0) {
+      evidenceSection += `
+Momentum & Streak Analysis:
+${evidence.derived.streakStats.map((m: any) => {
+  const winStreaks = m.winStreaks || {}
+  const lossStreaks = m.lossStreaks || {}
+  const triggers = Object.entries(m.triggerDistribution || {})
+    .sort((a: any, b: any) => b[1].count - a[1].count)
+    .slice(0, 2)
+    .map(([t, info]: [string, any]) => `${t}: ${info.count}`)
+    .join(', ')
+  return `- ${m.teamName}: ${winStreaks.count || 0} win streaks (max ${winStreaks.maxLength || 0}), ${lossStreaks.count || 0} loss streaks (max ${lossStreaks.maxLength || 0}). Momentum: ${m.momentumScore?.toFixed(1) || 0}, Resilience: ${m.resilienceScore?.toFixed(1) || 0}${triggers ? ` [Triggers: ${triggers}]` : ''}`
+}).join('\n')}
+`
+    }
+
+    // Sprint 4: Add critical rounds if available
+    if (evidence?.derived?.criticalRounds && evidence.derived.criticalRounds.length > 0) {
+      evidenceSection += `
+Critical Rounds for VOD Review:
+${evidence.derived.criticalRounds.map((c: any) => {
+  const priority = c.byPriority || {}
+  const categories = Object.entries(c.categoryBreakdown || {})
+    .map(([cat, info]: [string, any]) => `${cat}: ${info.count}`)
+    .join(', ')
+  const topRounds = (c.topReviewRounds || []).slice(0, 3)
+    .map((r: any) => `R${r.roundNumber}`)
+    .join(', ')
+  return `- Game: ${c.totalCriticalRounds} critical rounds [Critical: ${priority.critical || 0}, High: ${priority.high || 0}]. Categories: ${categories}. Top review: ${topRounds}. Est. ${c.reviewTimeEstimate || 0}min`
+}).join('\n')}
+`
+    }
+
+    // Sprint 4: Add execute pattern stats if available
+    if (evidence?.derived?.executePatternStats && evidence.derived.executePatternStats.length > 0) {
+      evidenceSection += `
+Execute Pattern Analysis:
+${evidence.derived.executePatternStats.map((e: any) => {
+  const pref = e.preferredPatterns || {}
+  const best = e.mostSuccessfulPatterns || {}
+  const insights = (e.coachingInsights || [])
+    .slice(0, 2)
+    .map((i: any) => i.description)
+    .join('; ')
+  return `- ${e.teamName}: Preferred ${pref.site || 'N/A'} site (${pref.timing || 'N/A'} timing), ${pref.entryMethod || 'N/A'} entries. Best: ${best.site || 'N/A'} (${((best.siteWinRate || 0) * 100).toFixed(0)}%). Predictability: ${((e.predictabilityScore || 0) * 100).toFixed(0)}%${insights ? ` [${insights}]` : ''}`
+}).join('\n')}
+`
+    }
+
+    // Sprint 4: Add performance trend stats if available
+    if (evidence?.derived?.performanceTrendStats && evidence.derived.performanceTrendStats.length > 0) {
+      evidenceSection += `
+Performance Trends:
+${evidence.derived.performanceTrendStats.map((t: any) => {
+  const profile = t.trendProfile || {}
+  const fatigue = t.fatigueIndicators || {}
+  const flags = (t.coachingFlags || [])
+    .map((f: any) => f.flag)
+    .join(', ')
+  return `- ${t.teamName}: HS trend ${profile.headshotDirection || 'stable'}, ${profile.dominantPhases || 0} dominant phases, ${profile.strugglingPhases || 0} struggling. Late game: ${fatigue.lateGameDropoff ? 'DROPOFF' : 'stable'} (${fatigue.lateGameKdDiff || 0} KD)${flags ? ` [Flags: ${flags}]` : ''}`
+}).join('\n')}
+`
+    }
+
+    // Sprint 4: Add composition stats if available
+    if (evidence?.derived?.compositionStats && evidence.derived.compositionStats.length > 0) {
+      evidenceSection += `
+Agent Composition Effectiveness:
+${evidence.derived.compositionStats.map((c: any) => {
+  const topComp = Object.entries(c.compositionFrequency || {})
+    .sort((a: any, b: any) => b[1].count - a[1].count)[0]
+  const topCompStr = topComp ? `${topComp[0]}: ${(topComp[1] as any).count}x (${((topComp[1] as any).winRate * 100).toFixed(0)}%)` : 'N/A'
+  const topAgent = Object.entries(c.agentEffectiveness || {})
+    .sort((a: any, b: any) => b[1].winRate - a[1].winRate)[0]
+  const topAgentStr = topAgent ? `${topAgent[0]}: ${((topAgent[1] as any).winRate * 100).toFixed(0)}%` : 'N/A'
+  return `- ${c.teamName}: ${c.uniqueCompositions} unique comps (flexibility: ${((c.flexibilityScore || 0) * 100).toFixed(0)}%). Most used: ${topCompStr}. Best agent: ${topAgentStr}`
+}).join('\n')}
+`
+    }
   }
 
   // Add attack/defense stats if available
@@ -473,13 +637,31 @@ Guidelines:
 - When post-plant stats are provided, analyze site-specific performance in post-plant scenarios. Negative KD on a site may indicate poor positioning or callouts.
 - When player matchup stats are provided, identify nemesis relationships (players consistently losing to specific opponents) and favorable matchups (players dominating specific opponents). Use this for strategic player positioning.
 - When map control stats are provided, evaluate early-round aggression success. Teams with high early kill differentials have strong map control. Low aggressive opening win rates suggest overcommitting.
+- When pistol stats are provided, analyze pistol round economy and bonus conversion. High pistol win rate with low bonus conversion suggests inability to capitalize on economic advantage.
+- Attack vs defense pistol win rates may indicate which side needs pistol strat improvements. Identify pistol kill leaders for potential designated pistol callers.
+- When man advantage stats are provided, identify throw rates (losing with numbers advantage) and comeback rates. High throw rates indicate poor discipline or coordination under pressure.
+- Teams with low advantage conversion but high comebacks may have mental resilience but tactical issues.
+- When retake stats are provided, analyze site-specific retake success. Low retake rates on specific sites may indicate poor utility allocation or passive positioning.
+- Identify top defusers for clutch situations and retake assignments.
+- When entry stats are provided, compare entry fraggers' success rates and flash support impact. High flash-supported win rates vs low dry entry rates suggest team is over-relying on flash support.
+- Entry players with high death rates but low trade rates indicate poor follow-up from teammates.
+- When spike carrier stats are provided, analyze carrier death rates and plant success. High carrier death rate before plant suggests predictable spike pathing or poor support.
+- When momentum stats are provided, analyze streak patterns. Teams with high resilience scores recover well from losses. Low momentum scores with many loss streaks indicate tilt susceptibility.
+- Identify streak triggers (clutch wins, eco steals) and breakers (throws, economy resets) to understand psychological patterns.
+- When critical round stats are provided, focus VOD review on low-winrate critical situations (match point, close score, clutches). These are highest-leverage improvement opportunities.
+- When execute pattern stats are provided, analyze site preferences and timing. High predictability scores suggest teams are readable and need variation.
+- Teams with low dry entry win rates but high flash-supported rates are over-reliant on utility. Teams with high early execute success should lean into fast plays.
+- When performance trend stats are provided, identify fatigue indicators. Late game dropoffs suggest stamina issues or need for tactical adjustments post-round-18.
+- Declining headshot trends mid-match indicate mechanical fatigue. Stable trends with struggling phases indicate tactical rather than mechanical issues.
+- When composition stats are provided, analyze agent flexibility. Low flexibility with high win rates indicates a refined, optimized pool. Low flexibility with low win rates suggests inflexibility hurting adaptation.
+- Compare map-specific compositions to identify where agent experimentation may be needed.
 
 Output format (STRICTLY follow this markdown structure with ## headers):
 
 ## EVIDENCE
 - List 3-5 key data points with specific numbers from the stats above
 - Include player names and percentages where relevant (e.g., "Xeppaa achieved 64% opening duel win rate (7K/4D)")
-- Focus on: first blood conversion, plant success, isolated deaths, clutch performance, economy, trades, opening duels, weapon performance, engagement range, tempo, save round discipline, anti-eco performance, half adaptation, utility impact, post-plant positioning, player matchups, map control
+- Focus on: first blood conversion, plant success, isolated deaths, clutch performance, economy, trades, opening duels, weapon performance, engagement range, tempo, save round discipline, anti-eco performance, half adaptation, utility impact, post-plant positioning, player matchups, map control, pistol rounds, man advantage conversion, retakes, entry fragging, spike carrier, momentum/streaks, critical rounds, execute patterns, performance trends, composition effectiveness
 
 ## INSIGHT
 - 2-4 bullet points explaining what these patterns mean for team performance

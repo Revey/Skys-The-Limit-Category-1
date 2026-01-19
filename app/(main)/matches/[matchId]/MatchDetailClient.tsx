@@ -8,6 +8,7 @@ import { getMapImage } from '@/lib/mapImages'
 import { normalizeTeamName } from '@/lib/teamUtils'
 import { CoachPanel } from '@/components/matches/CoachPanel'
 import { EvidencePanel } from '@/components/matches/EvidencePanel'
+import { VisualizationsPanel } from '@/components/matches/VisualizationsPanel'
 
 interface GameData {
   gameId: string
@@ -217,10 +218,18 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
             </section>
           )}
 
+          {/* Visualizations Panel - Sprint 7 */}
+          <div className="backdrop-blur-xl">
+            <VisualizationsPanel
+              matchId={seriesData.matchId}
+              selectedGameId={selectedGameId}
+            />
+          </div>
+
           {/* Evidence Panel - with synced map selection */}
           <div className="backdrop-blur-xl">
-            <EvidencePanel 
-              matchId={seriesData.matchId} 
+            <EvidencePanel
+              matchId={seriesData.matchId}
               selectedGameId={selectedGameId}
               onGameChange={setSelectedGameId}
             />

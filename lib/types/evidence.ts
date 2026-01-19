@@ -574,6 +574,733 @@ export interface MapControlStat {
 }
 
 // =============================================================================
+// Sprint 3: Strategic Situational Analytics Types
+// =============================================================================
+
+export interface PistolStat {
+  teamId: string
+  teamName: string
+  pistolRounds: {
+    played: number
+    won: number
+    winRate: number
+    firstHalfWinRate: number
+    secondHalfWinRate: number
+    attackPistolWinRate: number
+    defensePistolWinRate: number
+  }
+  bonusConversion: {
+    bonusRoundsPlayed: number
+    bonusRoundsWon: number
+    bonusConversionRate: number
+    lostToForceRate: number
+  }
+  antiBonus: {
+    forceAttempts: number
+    forceWins: number
+    forceWinRate: number
+  }
+  pistolTopFragger: {
+    playerId: string
+    playerName: string
+    pistolKills: number
+    pistolDeaths: number
+    pistolKD: number
+  } | null
+}
+
+export interface ManAdvantageStat {
+  teamId: string
+  teamName: string
+  byAdvantage: {
+    [situation: string]: {
+      total: number
+      wins: number
+      losses: number
+      winRate: number
+    }
+  }
+  throwStats: {
+    totalThrows: number
+    throwRate: number
+    worstThrow: string | null
+    throwRounds: Array<{
+      gameId: string
+      roundNumber: number
+      situation: string
+    }>
+  }
+  comebackStats: {
+    totalComebacks: number
+    bestComeback: string | null
+    comebackRounds: Array<{
+      gameId: string
+      roundNumber: number
+      situation: string
+    }>
+  }
+  situationMatrix: {
+    [situation: string]: {
+      total: number
+      wins: number
+      winRate: number
+    }
+  }
+}
+
+export interface RetakeStat {
+  teamId: string
+  teamName: string
+  totalRetakeAttempts: number
+  retakeSuccesses: number
+  retakeWinRate: number
+  bySite: {
+    [site: string]: {
+      attempts: number
+      successes: number
+      winRate: number
+    }
+  }
+  bySituation: {
+    [situation: string]: {
+      attempts: number
+      successes: number
+      winRate: number
+    }
+  }
+  topDefuser: {
+    playerId: string
+    playerName: string
+    clutchDefuses: number
+  } | null
+}
+
+export interface EntryStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  entryAttempts: number
+  entryKills: number
+  entryDeaths: number
+  entryKillRate: number
+  entrySuccessRate: number
+  deathsTraded: number
+  deathsUntraded: number
+  tradeRate: number
+  entriesWithFlash: number
+  entriesWithoutFlash: number
+  flashSupportedWinRate: number
+  dryEntryWinRate: number
+}
+
+export interface SpikeCarrierStat {
+  teamId: string
+  teamName: string
+  totalAttackRounds: number
+  successfulPlants: number
+  carrierDeathsBeforePlant: number
+  plantRate: number
+  carrierDeathRate: number
+  spikeDrops: number
+  byPlayer: {
+    [playerId: string]: {
+      playerId: string
+      playerName: string
+      roundsAsCarrier: number
+      successfulPlants: number
+      deathsBeforePlant: number
+      plantRate: number
+    }
+  }
+}
+
+// =============================================================================
+// Sprint 4: Pattern Recognition & Predictive Analytics
+// =============================================================================
+
+export interface StreakRecord {
+  gameId: string
+  teamId: string
+  streakType: 'win' | 'loss'
+  length: number
+  startRound: number
+  endRound: number
+  crossedHalves: boolean
+  trigger: string
+  breaker: string
+}
+
+export interface StreakInfo {
+  count: number
+  avgLength: number
+  maxLength: number
+  maxStreakGame: string
+  maxStreakRounds: string
+}
+
+export interface TriggerInfo {
+  count: number
+  avgStreakLength: number
+}
+
+export interface MomentumStat {
+  teamId: string
+  teamName: string
+  winStreaks: StreakInfo
+  lossStreaks: StreakInfo
+  triggerDistribution: {
+    [trigger: string]: TriggerInfo
+  }
+  momentumScore: number
+  resilienceScore: number
+  keyMomentumRounds: {
+    round: number
+    gameId: string
+    type: string
+    impact: string
+  }[]
+}
+
+export interface RoundImportance {
+  gameId: string
+  roundNumber: number
+  importanceScore: number
+  factors: {
+    scoreCloseness: number
+    matchPoint: boolean
+    clutchPresent: boolean
+    economyPivot: boolean
+    streakRelevance: number
+  }
+}
+
+export interface CriticalRound {
+  gameId: string
+  roundNumber: number
+  importanceScore: number
+  winnerTeamId: string
+  criticalFactors: string[]
+  learningOpportunity: string
+}
+
+export interface CriticalRoundStat {
+  gameId: string
+  totalCriticalRounds: number
+  byPriority: {
+    critical: number
+    high: number
+    medium: number
+  }
+  categoryBreakdown: {
+    [category: string]: {
+      count: number
+      rounds: number[]
+    }
+  }
+  topReviewRounds: {
+    roundNumber: number
+    reason: string
+    coachingFocus: string
+  }[]
+  reviewTimeEstimate: number
+}
+
+export interface ExecuteSignature {
+  gameId: string
+  roundNumber: number
+  teamId: string
+  site: string
+  executeTiming: 'early' | 'mid' | 'late' | 'unknown'
+  entryMethod: string
+  utilityCount: number
+  prePlantKills: number
+  roundWon: boolean
+  signature: string
+}
+
+export interface ExecutePatternStat {
+  teamId: string
+  teamName: string
+  executeBreakdown: {
+    sitePreferences: {
+      [site: string]: {
+        count: number
+        wins: number
+        winRate: number
+        avgPrePlantKills: number
+      }
+    }
+    timingPreferences: {
+      [timing: string]: {
+        count: number
+        wins: number
+        winRate: number
+      }
+    }
+    entryMethods: {
+      [method: string]: {
+        count: number
+        wins: number
+        winRate: number
+      }
+    }
+    recurringPatterns: {
+      [signature: string]: {
+        count: number
+        wins: number
+        winRate: number
+        rounds: number[]
+      }
+    }
+  }
+  preferredPatterns: {
+    site: string
+    timing: string
+    entryMethod: string
+  }
+  mostSuccessfulPatterns: {
+    site: string | null
+    siteWinRate: number
+    entryMethod: string | null
+    entryWinRate: number
+  }
+  predictabilityScore: number
+  coachingInsights: {
+    type: string
+    description: string
+    severity: 'low' | 'medium' | 'high' | 'positive'
+  }[]
+}
+
+export interface PerformanceTrendStat {
+  teamId: string
+  teamName: string
+  gameId: string
+  trendProfile: {
+    headshotDirection: 'improving' | 'stable' | 'declining'
+    phaseDistribution: {
+      [phase: string]: number
+    }
+    dominantPhases: number
+    strugglingPhases: number
+  }
+  fatigueIndicators: {
+    lateGameDropoff: boolean
+    lateGameKdDiff: number
+    earlyGameKdDiff: number
+  }
+  coachingFlags: {
+    flag: string
+    description: string
+    severity: 'low' | 'medium' | 'high'
+  }[]
+}
+
+export interface CompositionStat {
+  teamId: string
+  teamName: string
+  compositionFrequency: {
+    [composition: string]: {
+      count: number
+      winRate: number
+      maps: string[]
+    }
+  }
+  agentEffectiveness: {
+    [agent: string]: {
+      gamesPlayed: number
+      winRate: number
+      player: string | null
+    }
+  }
+  mapCompositions: {
+    [mapName: string]: {
+      preferredComp: string[]
+      compWinRate: number
+      gamesPlayed: number
+    }
+  }
+  flexibilityScore: number
+  uniqueCompositions: number
+  totalGames: number
+}
+
+export interface OpponentTendency {
+  opponentTeamId: string
+  mapName: string
+  gameId: string
+  seriesId: string
+  attackStats: {
+    attackRounds: number
+    attackWins: number
+    sitePreference: {
+      [site: string]: number
+    }
+  }
+  economyDecisions: {
+    forceBuyRounds: number[]
+    saveRounds: number[]
+    fullBuyRounds: number[]
+    forceRate: number
+  }
+  playerPerformance: {
+    [playerId: string]: {
+      kills: number
+      deaths: number
+      firstBloods: number
+    }
+  }
+  notableRounds: number[]
+}
+
+// =============================================================================
+// Sprint 5: Advanced Intelligence & Coaching Automation
+// =============================================================================
+
+// Task 1: Win Probability Model
+export interface WinProbabilityFactor {
+  teamId: string
+  roundNumber: number
+  winProbability: number
+  factors: {
+    baseProbability: number
+    economyAdjustment: number
+    streakAdjustment: number
+  }
+  confidence: 'high' | 'medium' | 'low'
+}
+
+export interface SwingRound {
+  roundNumber: number
+  probability: number
+  won: boolean
+  impact: 'positive' | 'negative'
+}
+
+export interface WinProbabilityStat {
+  teamId: string
+  teamName: string
+  modelAccuracy: number
+  probabilityFactors: {
+    economyImpact: {
+      advantageWinRate: number
+      disadvantageWinRate: number
+      evenWinRate: number
+      samples: {
+        advantage: number
+        disadvantage: number
+        even: number
+      }
+    }
+    streakImpact: {
+      positiveStreakWinRate: number
+      negativeStreakWinRate: number
+      neutralWinRate: number
+      samples: {
+        positive: number
+        negative: number
+        neutral: number
+      }
+    }
+  }
+  swingRounds: SwingRound[]
+  avgWinProbability: number
+}
+
+// Task 2: What-If Scenario Engine
+export interface WhatIfScenario {
+  scenario: string
+  impact: {
+    originalProbability: number
+    modifiedProbability: number
+    probabilityChange: number
+    modification: {
+      type: string
+      value: unknown
+      description: string
+    }
+    impactLevel: 'high' | 'medium' | 'low'
+  }
+}
+
+export interface ScenarioRound {
+  roundNumber: number
+  gameId: string
+  actualOutcome: 'win' | 'loss'
+  scenarios: WhatIfScenario[]
+}
+
+export interface ScenarioAnalysis {
+  teamId: string
+  teamName: string
+  scenarioCount: number
+  keyScenarios: ScenarioRound[]
+}
+
+// Task 3: Automated Coaching Recommendations
+export interface TeamWeakness {
+  area: string
+  severity: 'high' | 'medium' | 'low'
+  description: string
+  recommendation: string
+}
+
+export interface TeamStrength {
+  area: string
+  level: 'elite' | 'strong' | 'good'
+  description: string
+  leverage: string
+}
+
+export interface CoachingRecommendation {
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  type: 'improvement' | 'leverage'
+  area: string
+  title: string
+  details: string
+  action: string
+  expectedImpact: string
+}
+
+export interface CoachingRecommendationStat {
+  teamId: string
+  teamName: string
+  weaknessCount: number
+  strengthCount: number
+  weaknesses: TeamWeakness[]
+  strengths: TeamStrength[]
+  recommendations: CoachingRecommendation[]
+  topPriority: CoachingRecommendation | null
+}
+
+// Task 4: Scouting Report Generator
+export interface ScoutingProfile {
+  teamId: string
+  teamName: string
+  playstyle: {
+    primary: 'aggressive' | 'methodical' | 'balanced'
+    avgRoundDuration: number
+    preferredTiming: string
+  }
+  keyPlayers: Array<{
+    playerId: string
+    playerName: string
+    role: 'entry' | 'support'
+  }>
+  sitePreferences: {
+    [site: string]: {
+      plants: number
+      wins: number
+    }
+  }
+  predictability: {
+    score: number
+    level: 'high' | 'medium' | 'low'
+    exploitable: boolean
+  }
+  economyTendencies: {
+    forceRate: number
+  }
+}
+
+export interface CounterStrategy {
+  target: string
+  strategy: string
+  details: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+export interface ScoutingReport {
+  teamId: string
+  teamName: string
+  profile: ScoutingProfile
+  counterStrategies: CounterStrategy[]
+  keyTakeaways: string[]
+}
+
+// Task 5: Performance Benchmarking
+export interface PerformanceBenchmark {
+  value: number
+  percentile: number
+  tier: 'elite' | 'above_average' | 'average' | 'below_average' | 'unknown'
+  benchmarks: {
+    elite: number
+    good: number
+    average: number
+  }
+}
+
+export interface PlayerBenchmark {
+  playerId: string
+  playerName: string
+  metrics: {
+    [metricName: string]: PerformanceBenchmark
+  }
+  overallPercentile: number
+}
+
+export interface TeamBenchmarks {
+  metrics: {
+    [metricName: string]: PerformanceBenchmark
+  }
+  overallPercentile: number
+  overallTier: 'elite' | 'above_average' | 'average' | 'below_average'
+}
+
+export interface BenchmarkStat {
+  teamId: string
+  teamName: string
+  teamBenchmarks: TeamBenchmarks
+  playerBenchmarks: PlayerBenchmark[]
+  areasAboveAverage: string[]
+  areasForImprovement: string[]
+}
+
+// Task 6: Coaching Report Composer
+export interface ExecutiveSummary {
+  teamName: string
+  seriesResult: string
+  roundRecord: string
+  roundWinRate: number
+  mapsPlayed: number
+  outcome: 'win' | 'loss'
+}
+
+export interface KeyMoment {
+  type: 'critical_round' | 'swing_round'
+  roundNumber: number
+  reason?: string
+  coachingFocus?: string
+  probability?: number
+  impact?: string
+}
+
+export interface ActionItem {
+  priority: string
+  action: string
+  area: string
+  expectedImpact: string
+}
+
+export interface CoachingReport {
+  teamId: string
+  teamName: string
+  reportVersion: string
+  sections: {
+    executiveSummary: ExecutiveSummary
+    keyMoments: KeyMoment[]
+    strengthsAndWeaknesses: {
+      strengths: TeamStrength[]
+      weaknesses: TeamWeakness[]
+    }
+    benchmarks: TeamBenchmarks
+    playerPerformance: PlayerBenchmark[]
+    opponentScouting: ScoutingReport | null
+    actionItems: ActionItem[]
+  }
+  generatedAt: string | null
+}
+
+// =============================================================================
+// Sprint 6: Polish, ADR & Interactive Coaching
+// =============================================================================
+
+// Task A1: Damage/ADR Estimation
+export interface PlayerDamageStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  estimatedDamage: number
+  rounds: number
+  adr: number
+  kills: number
+  damageRatio: number
+  confidence: 'high' | 'medium' | 'low'
+}
+
+// Task A1: KAST Statistics
+export interface KASTStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  rounds: number
+  killRounds: number
+  assistRounds: number
+  survivedRounds: number
+  tradedRounds: number
+  kastRounds: number
+  kastPercentage: number
+}
+
+// Task A1: ACS (Average Combat Score) Estimation
+export interface ACSStat {
+  playerId: string
+  playerName: string
+  teamId: string
+  teamName: string
+  estimatedACS: number
+  components: {
+    damageScore: number
+    firstBloodScore: number
+    multiKillScore: number
+    clutchScore: number
+  }
+  rounds: number
+  confidence: 'high' | 'medium' | 'low'
+}
+
+// Task A3: Item Event Tracking
+export interface ItemEventStat {
+  teamId: string
+  teamName: string
+  spikeDrops: number
+  spikeDropsBeforePlant: number
+  roundsWithSpikeDrop: number
+  spikeRecoveryRate: number
+}
+
+// Task C1: Stat Significance
+export interface SignificanceFilter {
+  metricName: string
+  minSampleSize: number
+  currentSampleSize: number
+  isSignificant: boolean
+  confidence: 'high' | 'medium' | 'low'
+}
+
+// Task C2: Highlight Round
+export interface HighlightRound {
+  gameId: string
+  roundNumber: number
+  score: number
+  factors: {
+    ace: boolean
+    fourK: boolean
+    threeK: boolean
+    clutchWin: boolean
+    clutchAttempt: boolean
+    econWin: boolean
+    antiEcoLoss: boolean
+    momentumShift: boolean
+    matchPoint: boolean
+  }
+  primaryReason: string
+  involvedPlayers: string[]
+  recommendedForReview: boolean
+}
+
+export interface HighlightStats {
+  topHighlights: HighlightRound[]
+  totalHighlightRounds: number
+  byCategory: {
+    [category: string]: number
+  }
+}
+
+// =============================================================================
 // Main Evidence Structure
 // =============================================================================
 
@@ -604,6 +1331,32 @@ export interface EvidenceDerived {
   postPlantStats?: PostPlantStats
   matchupStats?: MatchupStats
   mapControlStats?: MapControlStat[]
+  // Sprint 3: Strategic Situational Analytics
+  pistolStats?: PistolStat[]
+  manAdvantageStats?: ManAdvantageStat[]
+  retakeStats?: RetakeStat[]
+  entryStats?: EntryStat[]
+  spikeCarrierStats?: SpikeCarrierStat[]
+  // Sprint 4: Pattern Recognition & Predictive Analytics
+  streakStats?: MomentumStat[]
+  criticalRounds?: CriticalRoundStat[]
+  executePatternStats?: ExecutePatternStat[]
+  performanceTrendStats?: PerformanceTrendStat[]
+  compositionStats?: CompositionStat[]
+  // Sprint 5: Advanced Intelligence & Coaching Automation
+  winProbabilityStats?: WinProbabilityStat[]
+  scenarioAnalysis?: ScenarioAnalysis[]
+  coachingRecommendations?: CoachingRecommendationStat[]
+  scoutingReports?: ScoutingReport[]
+  benchmarkStats?: BenchmarkStat[]
+  coachingReports?: CoachingReport[]
+  // Sprint 6: Polish, ADR & Interactive Coaching
+  playerDamageStats?: PlayerDamageStat[]
+  kastStats?: KASTStat[]
+  acsStats?: ACSStat[]
+  itemEventStats?: ItemEventStat[]
+  highlightStats?: HighlightStats
+  significanceFilters?: SignificanceFilter[]
 }
 
 export interface EvidenceV1 {
