@@ -45,8 +45,9 @@ export function middleware(request: NextRequest) {
       const dashboardUrl = new URL('/dashboard', request.url)
       return NextResponse.redirect(dashboardUrl)
     } else {
-      console.log('[MIDDLEWARE] Root path without auth, allowing landing page')
-      // Allow landing page to render
+      console.log('[MIDDLEWARE] Root path without auth, redirecting to login')
+      const loginUrl = new URL('/login', request.url)
+      return NextResponse.redirect(loginUrl)
     }
   }
 

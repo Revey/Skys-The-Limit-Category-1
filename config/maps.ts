@@ -9,12 +9,12 @@ export interface MapSettings {
 
 export const MAP_SETTINGS: Record<string, MapSettings> = {
   'ascent': { 
-    imageRotation: 90,
+    imageRotation: 0,
     dataRotation: 0,
     minX: -4850,
     maxX: 7550,
     minY: -11100,
-    maxY: 2200 
+    maxY: 5000
   },
   'bind': { imageRotation: 0, dataRotation: 0, minX: 100, maxX: 16100, minY: -7300, maxY: 6050 },
   'haven': { imageRotation: 0, dataRotation: 0, minX: -3700, maxX: 7450, minY: -14100, maxY: -1800 },
