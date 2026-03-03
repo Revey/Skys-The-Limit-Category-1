@@ -3,10 +3,10 @@ import type { NextRequest } from 'next/server'
 import { AUTH_CONFIG } from '@/config/auth'
 
 // Define which paths require authentication
-const protectedPaths = ['/dashboard', '/matches']
+// const protectedPaths = ['/dashboard', '/matches']
 
 // Define public paths that should redirect to dashboard if authenticated
-const publicPaths = ['/login']
+// const publicPaths = ['/login']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
