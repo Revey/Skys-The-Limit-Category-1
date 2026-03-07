@@ -117,7 +117,7 @@ function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
 }
 
 export default async function MatchesPage() {
-  await requireAuth()
+  // await requireAuth()
   await connectToDB()
 
   const matches = (await Match.aggregate([

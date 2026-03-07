@@ -91,7 +91,7 @@ interface SeriesData {
 type Props = { params: Promise<{ opponentName: string }> }
 
 export default async function OpponentDetailPage({ params }: Props) {
-  await requireAuth()
+  // await requireAuth()
   const { opponentName } = await params
   const decodedName = decodeURIComponent(opponentName)
   

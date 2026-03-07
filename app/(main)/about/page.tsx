@@ -1,7 +1,7 @@
 import { requireAuth } from '@/lib/auth'
 
 export default async function AboutPage() {
-  await requireAuth()
+  // await requireAuth()
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-6">

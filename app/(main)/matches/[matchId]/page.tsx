@@ -45,7 +45,7 @@ export const dynamic = 'force-dynamic'
 type Props = { params: Promise<{ matchId: string }> }
 
 export default async function MatchDetailPage({ params }: Props) {
-  await requireAuth()
+  // await requireAuth()
   const { matchId } = await params
   await connectToDB()
 

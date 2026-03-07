@@ -24,9 +24,9 @@ export function middleware(request: NextRequest) {
   // const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
   // const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
 
-  // Redirect to dashboard if accessing root
-  if (pathname === '/') {
-    console.log('[MIDDLEWARE] Root path, redirecting to dashboard')
+  // Redirect to dashboard if accessing root or login
+  if (pathname === '/' || pathname === '/login') {
+    console.log('[MIDDLEWARE] Root or login path, redirecting to dashboard')
     const dashboardUrl = new URL('/dashboard', request.url)
     return NextResponse.redirect(dashboardUrl)
   }

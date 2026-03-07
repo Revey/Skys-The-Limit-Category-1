@@ -11,31 +11,14 @@ export function Navigation() {
   const router = useRouter()
   const [logoError, setLogoError] = useState(false)
   
-  // Don't show nav on login page or landing page
-  if (pathname === '/login' || pathname === '/') return null
+  // Don't show nav on root page
+  if (pathname === '/') return null
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/matches', label: 'Opponents' },
     { href: '/about', label: 'About' },
   ]
-
-  const handleLogout = async () => {
-    try {
-      console.log('Logging out...')
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'same-origin',
-      })
-      console.log('Logout successful, redirecting...')
-      window.location.href = '/login'
-    } catch (error) {
-      console.error('Logout error:', error)
-      // Fallback: clear cookie client-side and redirect anyway
-      document.cookie = 'c9_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      window.location.href = '/login'
-    }
-  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-[#00aeef]/20 animate-fade-in">
@@ -80,14 +63,8 @@ export function Navigation() {
             </span>
           </Link>
 
-          {/* Right - Logout */}
-          <button 
-            onClick={handleLogout}
-            className="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center gap-2 transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+          {/* Right - Empty Spacer to maintain layout balance */}
+          <div className="w-[100px]"></div>
         </div>
       </div>
     </nav>
