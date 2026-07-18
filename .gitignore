@@ -43,3 +43,16 @@ scripts/py/out/
 
 .mcp.json
 nul
+# Local-only tooling and IDE config
+.claude/
+.idea/
+
+# Local AI session notes
+AI Summaries/
+
+# Build artifacts and local junk
+tsconfig.tsbuildinfo
+cookies.txt
+*.txt.log
+data-pipeline/src/ingestion_log.txt
+data-pipeline/src/out/

@@ -1,6 +1,7 @@
 export const AUTH_CONFIG = {
-  username: 'Cloud9',
-  password: '<redacted>',
+  // Credentials come from env — never hardcode them here (this file is committed).
+  username: process.env.AUTH_USERNAME ?? '',
+  password: process.env.AUTH_PASSWORD ?? '',
   cookieName: 'c9_auth',
 }
 
