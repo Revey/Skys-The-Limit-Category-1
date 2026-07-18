@@ -29,7 +29,10 @@ interface RoundTimelineProps {
   rounds: RoundData[]
   teamName: string
   opponentName: string
-  highlightRounds?: number[]
+  highlightRounds?: Array<{
+    gameId: string
+    roundNumber: number
+  }>
 }
 
 export default function RoundTimeline({
@@ -38,16 +41,17 @@ export default function RoundTimeline({
   opponentName,
   highlightRounds = []
 }: RoundTimelineProps) {
-  const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set())
+  const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set())
   const [filterType, setFilterType] = useState<'all' | 'won' | 'lost' | 'highlight'>('all')
 
-  const toggleRound = (roundNumber: number) => {
+  const toggleRound = (gameId: string, roundNumber: number) => {
+    const key = `${gameId}:${roundNumber}`
     setExpandedRounds(prev => {
       const next = new Set(prev)
-      if (next.has(roundNumber)) {
-        next.delete(roundNumber)
+      if (next.has(key)) {
+        next.delete(key)
       } else {
-        next.add(roundNumber)
+        next.add(key)
       }
       return next
     })
@@ -133,8 +137,12 @@ export default function RoundTimeline({
       {/* Timeline */}
       <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
         {filteredRounds.map(round => {
-          const isExpanded = expandedRounds.has(round.roundNumber)
-          const isHighlight = highlightRounds.includes(round.roundNumber) || round.isHighlight
+          const roundKey = `${round.gameId}:${round.roundNumber}`
+          const isExpanded = expandedRounds.has(roundKey)
+          const isHighlight = highlightRounds.some(highlight =>
+            highlight.gameId === round.gameId &&
+            highlight.roundNumber === round.roundNumber
+          ) || round.isHighlight
 
           return (
             <div
@@ -147,7 +155,7 @@ export default function RoundTimeline({
             >
               {/* Round header */}
               <button
-                onClick={() => toggleRound(round.roundNumber)}
+                onClick={() => toggleRound(round.gameId, round.roundNumber)}
                 className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-700/30 transition-colors"
               >
                 {/* Expand icon */}

@@ -2,35 +2,29 @@
 
 import { useMemo } from 'react'
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
+  Area,
   CartesianGrid,
-  Tooltip,
+  ComposedChart,
+  Line,
   ReferenceLine,
   ResponsiveContainer,
-  Area,
-  ComposedChart
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts'
+import {
+  buildWinProbabilityTimeline,
+  type WinProbabilityGame,
+  type WinProbabilityPoint,
+  type WinProbabilityRound,
+} from '@/lib/analytics/winProbability'
 
 interface WinProbabilityTimelineProps {
-  rounds: Array<{
-    roundNumber: number
-    gameId: string
-    winnerTeamId: string
-    teamWinProb?: number
-    momentumShift?: boolean
-    isClutch?: boolean
-    isCritical?: boolean
-  }>
+  rounds: WinProbabilityRound[]
   teamId: string
   teamName: string
   opponentName: string
-  games: Array<{
-    gameId: string
-    mapName: string
-  }>
+  games: WinProbabilityGame[]
 }
 
 export default function WinProbabilityTimeline({
@@ -40,90 +34,63 @@ export default function WinProbabilityTimeline({
   opponentName,
   games
 }: WinProbabilityTimelineProps) {
-  // Process data for chart
-  const chartData = useMemo(() => {
-    let teamScore = 0
-    let opponentScore = 0
+  const chartData = useMemo(
+    () => buildWinProbabilityTimeline(rounds, games, teamId),
+    [rounds, games, teamId]
+  )
 
-    return rounds.map((round) => {
-      const isTeamWin = round.winnerTeamId === teamId
-      if (isTeamWin) teamScore++
-      else opponentScore++
-
-      // Calculate win probability based on score
-      // Simple model: based on rounds needed to win
-      const teamRoundsToWin = 13 - teamScore
-      const oppRoundsToWin = 13 - opponentScore
-      const totalRoundsLeft = teamRoundsToWin + oppRoundsToWin
-
-      // Bayesian-ish probability
-      let winProb = round.teamWinProb
-      if (!winProb) {
-        // Estimate from score
-        winProb = oppRoundsToWin / Math.max(totalRoundsLeft, 1)
-      }
-
-      // Find map name
-      const game = games.find(g => g.gameId === round.gameId)
-      const mapName = game?.mapName || 'Unknown'
-
-      return {
-        round: round.roundNumber,
-        roundLabel: `R${round.roundNumber}`,
-        winProb: Math.round(winProb * 100),
-        teamScore,
-        opponentScore,
-        score: `${teamScore}-${opponentScore}`,
-        isTeamWin,
-        mapName,
-        gameId: round.gameId,
-        isClutch: round.isClutch,
-        isCritical: round.isCritical,
-        momentumShift: round.momentumShift
-      }
-    })
-  }, [rounds, teamId, games])
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: typeof chartData[0] }> }) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean
+    payload?: Array<{ payload: WinProbabilityPoint }>
+  }) => {
     if (!active || !payload?.length) return null
 
     const data = payload[0].payload
 
     return (
       <div className="bg-gray-900/95 border border-gray-700 rounded-lg p-3 shadow-xl">
-        <p className="text-white font-semibold">{data.mapName} - Round {data.round}</p>
+        <p className="text-white font-semibold">
+          {data.mapName} · {data.round === 0 ? 'Map start' : `Round ${data.round}`}
+        </p>
         <p className="text-gray-300">Score: {data.score}</p>
         <p className={`font-bold ${data.winProb >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-          Win Probability: {data.winProb}%
+          {teamName} win probability: {data.winProb}%
         </p>
-        {data.isClutch && <p className="text-yellow-400 text-sm">⚡ Clutch Round</p>}
+        {data.clutch && (
+          <p className={`text-sm ${data.clutch.isFocusTeam ? 'text-yellow-400' : 'text-gray-400'}`}>
+            ⚡ {data.clutch.playerName} won {data.clutch.situation}
+          </p>
+        )}
         {data.isCritical && <p className="text-orange-400 text-sm">🔥 Critical Round</p>}
         {data.momentumShift && <p className="text-purple-400 text-sm">📈 Momentum Shift</p>}
       </div>
     )
   }
 
-  // Custom dot for special rounds
-  const CustomDot = (props: { cx?: number; cy?: number; payload?: typeof chartData[0] }) => {
-    const { cx, cy, payload } = props
+  const CustomDot = ({
+    cx,
+    cy,
+    payload,
+  }: {
+    cx?: number
+    cy?: number
+    payload?: WinProbabilityPoint
+  }) => {
+    if (cx == null || cy == null || !payload) return null
 
-    if (!cx || !cy || !payload) return null
-
-    if (payload.isClutch) {
-      return (
-        <circle cx={cx} cy={cy} r={6} fill="#EAB308" stroke="#FDE047" strokeWidth={2} />
-      )
+    if (payload.clutch) {
+      const fill = payload.clutch.isFocusTeam ? '#EAB308' : '#6B7280'
+      const stroke = payload.clutch.isFocusTeam ? '#FDE047' : '#D1D5DB'
+      return <circle cx={cx} cy={cy} r={6} fill={fill} stroke={stroke} strokeWidth={2} />
     }
     if (payload.isCritical) {
-      return (
-        <circle cx={cx} cy={cy} r={5} fill="#F97316" stroke="#FB923C" strokeWidth={2} />
-      )
+      return <circle cx={cx} cy={cy} r={5} fill="#F97316" stroke="#FB923C" strokeWidth={2} />
     }
     if (payload.momentumShift) {
-      return (
-        <circle cx={cx} cy={cy} r={5} fill="#A855F7" stroke="#C084FC" strokeWidth={2} />
-      )
+      return <circle cx={cx} cy={cy} r={5} fill="#A855F7" stroke="#C084FC" strokeWidth={2} />
     }
 
     return null
@@ -139,19 +106,23 @@ export default function WinProbabilityTimeline({
 
   return (
     <div className="bg-gray-900/50 rounded-xl border border-gray-700 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-white">Win Probability Timeline</h3>
-        <div className="flex gap-4 text-xs">
+        <div className="flex flex-wrap gap-4 text-xs">
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-            Clutch
+            <span className="w-3 h-3 rounded-full bg-yellow-500" />
+            {teamName} clutch
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+            <span className="w-3 h-3 rounded-full bg-gray-500" />
+            {opponentName} clutch
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-full bg-orange-500" />
             Critical
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+            <span className="w-3 h-3 rounded-full bg-purple-500" />
             Momentum
           </span>
         </div>
@@ -168,43 +139,29 @@ export default function WinProbabilityTimeline({
             </defs>
 
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-
-            <XAxis
-              dataKey="roundLabel"
-              stroke="#9CA3AF"
-              fontSize={12}
-              tickLine={false}
-            />
-
+            <XAxis dataKey="roundLabel" stroke="#9CA3AF" fontSize={12} tickLine={false} />
             <YAxis
               domain={[0, 100]}
               stroke="#9CA3AF"
               fontSize={12}
               tickLine={false}
-              tickFormatter={(val) => `${val}%`}
+              tickFormatter={(value) => `${value}%`}
             />
-
-            {/* 50% reference line */}
             <ReferenceLine
               y={50}
               stroke="#6B7280"
               strokeDasharray="5 5"
               label={{ value: '50%', position: 'right', fill: '#9CA3AF', fontSize: 10 }}
             />
-
             <Tooltip content={<CustomTooltip />} />
-
-            {/* Area fill under line */}
             <Area
-              type="monotone"
+              type="linear"
               dataKey="winProb"
               stroke="transparent"
               fill="url(#winProbGradient)"
             />
-
-            {/* Main probability line */}
             <Line
-              type="monotone"
+              type="linear"
               dataKey="winProb"
               stroke="#3B82F6"
               strokeWidth={2}
@@ -215,14 +172,13 @@ export default function WinProbabilityTimeline({
         </ResponsiveContainer>
       </div>
 
-      {/* Map separators / Game indicators */}
-      <div className="flex justify-center gap-2 mt-4">
-        {games.map((game, idx) => (
+      <div className="flex flex-wrap justify-center gap-2 mt-4">
+        {games.map((game, index) => (
           <span
             key={game.gameId}
             className="px-3 py-1 bg-gray-800 rounded-full text-xs text-gray-300"
           >
-            Map {idx + 1}: {game.mapName}
+            Map {index + 1}: {game.mapName}
           </span>
         ))}
       </div>

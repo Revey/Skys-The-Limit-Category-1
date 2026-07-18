@@ -15,8 +15,6 @@ const sizeMap = {
   lg: { container: 'w-12 h-12', text: 'text-base' },
 }
 
-// Agent image mapping - using placeholder URLs for now
-// These would be replaced with actual Valorant agent icons
 const AGENT_IMAGES: Record<string, string> = {
   'jett': '/agents/jett.png',
   'omen': '/agents/omen.png',
@@ -42,6 +40,9 @@ const AGENT_IMAGES: Record<string, string> = {
   'iso': '/agents/iso.png',
   'clove': '/agents/clove.png',
   'vyse': '/agents/vyse.png',
+  'tejo': '/agents/tejo.png',
+  'waylay': '/agents/waylay.png',
+  'veto': '/agents/veto.png',
 }
 
 export function AgentImage({ agent, size = 'md', className = '' }: AgentImageProps) {

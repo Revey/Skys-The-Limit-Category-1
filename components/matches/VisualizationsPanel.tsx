@@ -1,15 +1,18 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { BarChart3, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import WinProbabilityTimeline from '@/components/visualizations/WinProbabilityTimeline'
-import PlayerRadarChart from '@/components/visualizations/PlayerRadarChart'
-import KillHeatmap from '@/components/visualizations/KillHeatmap'
 import EconomyTimeline from '@/components/visualizations/EconomyTimeline'
-import RoundTimeline from '@/components/visualizations/RoundTimeline'
 import HighlightReel from '@/components/visualizations/HighlightReel'
+import KillHeatmap from '@/components/visualizations/KillHeatmap'
+import PlayerComparisonCard from '@/components/visualizations/PlayerComparisonCard'
+import RoundTimeline from '@/components/visualizations/RoundTimeline'
+import WinProbabilityTimeline from '@/components/visualizations/WinProbabilityTimeline'
+import { computeHighlights } from '@/lib/analytics/computeHighlights'
+import { computePlayerCards } from '@/lib/analytics/computePlayerCards'
 import { normalizeTeamName } from '@/lib/teamUtils'
+import type { EvidenceV1 } from '@/lib/types/evidence'
 
 interface VisualizationsPanelProps {
   matchId: string
@@ -26,28 +29,28 @@ export function VisualizationsPanel({
 }: VisualizationsPanelProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [evidence, setEvidence] = useState<any>(null)
+  const [evidence, setEvidence] = useState<EvidenceV1 | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
     async function fetchEvidence() {
       try {
         setLoading(true)
-        const res = await fetch(
+        const response = await fetch(
           `/api/coach/match?matchId=${matchId}&teamId=${encodeURIComponent(teamId)}`
         )
 
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}))
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
           throw new Error(errorData.error || 'Failed to fetch evidence')
         }
 
-        const data = await res.json()
-        setEvidence(data.evidence)
+        const data = await response.json()
+        setEvidence(data.evidence as EvidenceV1)
         setError(null)
-      } catch (err) {
-        console.error('Error fetching evidence:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load visualizations')
+      } catch (fetchError) {
+        console.error('Error fetching evidence:', fetchError)
+        setError(fetchError instanceof Error ? fetchError.message : 'Failed to load visualizations')
       } finally {
         setLoading(false)
       }
@@ -56,156 +59,130 @@ export function VisualizationsPanel({
     fetchEvidence()
   }, [matchId, teamId])
 
-  // Build team name mapping
   const teamNames = useMemo(() => {
     if (!evidence) return { team: teamName, opponent: 'Opponent', opponentId: '' }
 
     const names: Record<string, string> = { [teamId]: teamName }
-
-    // Extract team names from various stats
-    evidence.derived?.firstBloodStats?.forEach((stat: any) => {
-      if (stat.teamId && stat.teamName) {
-        names[stat.teamId] = normalizeTeamName(stat.teamName)
+    const addTeamName = (candidateTeamId?: string, candidateTeamName?: string) => {
+      if (candidateTeamId && candidateTeamName) {
+        names[candidateTeamId] = normalizeTeamName(candidateTeamName)
       }
-    })
+    }
 
-    evidence.derived?.mapsStats?.forEach((stat: any) => {
-      if (stat.teamId && stat.teamName) {
-        names[stat.teamId] = normalizeTeamName(stat.teamName)
-      }
-    })
+    evidence.derived?.firstBloodStats?.forEach(stat => addTeamName(stat.teamId, stat.teamName))
+    evidence.derived?.mapsStats?.forEach(stat => addTeamName(stat.teamId, stat.teamName))
+    evidence.economyRounds?.forEach(round => addTeamName(round.teamId, round.teamName))
 
-    // Find opponent name
-    const opponentId = Object.keys(names).find(id => id !== teamId)
-
+    const opponentId = Object.keys(names).find(id => id !== teamId) || ''
     return {
       team: names[teamId] || teamName,
       opponent: opponentId ? names[opponentId] : 'Opponent',
-      opponentId: opponentId || ''
+      opponentId,
     }
   }, [evidence, teamId, teamName])
 
-  // Filter data by selected game
   const filteredData = useMemo(() => {
     if (!evidence) return { rounds: [], kills: [], economy: [], games: [] }
 
-    const rounds = selectedGameId
-      ? (evidence.rounds || []).filter((r: any) => r.gameId === selectedGameId)
-      : evidence.rounds || []
+    const games = [...(evidence.games || [])]
+      .sort((a, b) => a.sequenceNumber - b.sequenceNumber)
+      .filter(game => !selectedGameId || game.gameId === selectedGameId)
+    const gameOrder = new Map(games.map((game, index) => [game.gameId, index]))
+    const rounds = (evidence.rounds || [])
+      .filter(round => !selectedGameId || round.gameId === selectedGameId)
+      .sort((a, b) => {
+        const gameDelta =
+          (gameOrder.get(a.gameId) ?? Number.MAX_SAFE_INTEGER) -
+          (gameOrder.get(b.gameId) ?? Number.MAX_SAFE_INTEGER)
+        return gameDelta || a.roundNumber - b.roundNumber
+      })
+    const kills = (evidence.kills || []).filter(
+      kill => !selectedGameId || kill.gameId === selectedGameId
+    )
+    const economy = (evidence.economyRounds || []).filter(
+      round => !selectedGameId || round.gameId === selectedGameId
+    )
 
-    const kills = selectedGameId
-      ? (evidence.kills || []).filter((k: any) => k.gameId === selectedGameId)
-      : evidence.kills || []
-
-    const economy = selectedGameId
-      ? (evidence.economyRounds || []).filter((e: any) => e.gameId === selectedGameId)
-      : evidence.economyRounds || []
-
-    return {
-      rounds,
-      kills,
-      economy,
-      games: evidence.games || []
-    }
+    return { rounds, kills, economy, games }
   }, [evidence, selectedGameId])
 
-  // Prepare player radar data
-  const playerRadarData = useMemo(() => {
-    if (!evidence?.players) return []
+  const highlights = useMemo(
+    () => evidence ? computeHighlights(evidence, teamId) : [],
+    [evidence, teamId]
+  )
+  const filteredHighlights = useMemo(
+    () => highlights.filter(highlight => !selectedGameId || highlight.gameId === selectedGameId),
+    [highlights, selectedGameId]
+  )
+  const playerCards = useMemo(
+    () => evidence ? computePlayerCards(evidence, { focusTeamId: teamId, selectedGameId }) : [],
+    [evidence, teamId, selectedGameId]
+  )
 
-    const focusTeamPlayers = evidence.players.filter((p: any) => p.teamId === teamId)
-    const derived = evidence.derived || {}
-
-    return focusTeamPlayers.map((player: any) => {
-      const clutchStats = derived.clutchStats?.find((c: any) => c.playerId === player.playerId)
-      const openingStats = derived.openingDuelStats?.find((o: any) => o.playerId === player.playerId)
-      const tradeStats = derived.tradeStats?.find((t: any) => t.playerId === player.playerId)
-      const damageStats = derived.playerDamageStats?.find((d: any) => d.playerId === player.playerId)
-      const kastStats = derived.kastStats?.find((k: any) => k.playerId === player.playerId)
-      const multiKillStats = derived.multiKillStats?.find((m: any) => m.playerId === player.playerId)
-
-      return {
-        playerId: player.playerId,
-        playerName: player.playerName || `Player ${player.playerId.slice(-4)}`,
-        teamId: player.teamId,
-        metrics: {
-          adr: Math.min((damageStats?.adr || 150) / 2, 100),
-          kast: (kastStats?.kastPercent || 0.7) * 100,
-          clutchRate: (clutchStats?.clutchRate || 0) * 100,
-          firstBloodRate: ((openingStats?.openingKills || 0) / Math.max(openingStats?.openingDuels || 1, 1)) * 100,
-          tradeRate: (tradeStats?.tradedRate || 0.5) * 100,
-          impactRating: Math.min((multiKillStats?.impactScore || 0) * 10, 100)
-        }
-      }
-    })
-  }, [evidence, teamId])
-
-  // Prepare highlight data
-  const highlights = useMemo(() => {
-    if (!evidence?.derived?.highlightStats?.rounds) return []
-    return evidence.derived.highlightStats.rounds
-  }, [evidence])
-
-  // Prepare round timeline data
   const roundTimelineData = useMemo(() => {
-    if (!filteredData.rounds.length) return []
-
+    let scoreGameId = ''
     let teamScore = 0
-    let oppScore = 0
+    let opponentScore = 0
 
-    return filteredData.rounds.map((round: any) => {
-      const isWin = round.winnerTeamId === teamId
-      if (isWin) teamScore++
-      else oppScore++
+    return filteredData.rounds.map(round => {
+      if (round.gameId !== scoreGameId) {
+        scoreGameId = round.gameId
+        teamScore = 0
+        opponentScore = 0
+      }
 
-      const game = filteredData.games.find((g: any) => g.gameId === round.gameId)
-      const eco = filteredData.economy.find(
-        (e: any) => e.roundNumber === round.roundNumber && e.gameId === round.gameId && e.teamId === teamId
+      const won = round.winnerTeamId === teamId
+      if (won) teamScore++
+      else opponentScore++
+
+      const game = filteredData.games.find(candidate => candidate.gameId === round.gameId)
+      const economy = filteredData.economy.find(
+        entry =>
+          entry.roundNumber === round.roundNumber &&
+          entry.gameId === round.gameId &&
+          entry.teamId === teamId
       )
-
-      const highlight = highlights.find(
-        (h: any) => h.roundNumber === round.roundNumber && h.gameId === round.gameId
+      const roundHighlights = filteredHighlights.filter(
+        highlight =>
+          highlight.roundNumber === round.roundNumber &&
+          highlight.gameId === round.gameId
       )
 
       return {
         roundNumber: round.roundNumber,
         gameId: round.gameId,
         mapName: game?.mapName || 'Unknown',
-        won: isWin,
+        won,
         winType: round.winType || 'unknown',
         events: [],
-        score: { team: teamScore, opponent: oppScore },
-        economyTier: eco?.economyTier || 'unknown',
-        isHighlight: !!highlight,
-        highlightTypes: highlight?.allHighlightTypes
+        score: { team: teamScore, opponent: opponentScore },
+        economyTier: economy?.economyTier || 'unknown',
+        isHighlight: roundHighlights.length > 0,
+        highlightTypes: roundHighlights.map(highlight => highlight.type.replace('_', ' ')),
       }
     })
-  }, [filteredData, highlights, teamId])
+  }, [filteredData, filteredHighlights, teamId])
 
-  // Get current map name
   const currentMap = useMemo(() => {
     if (!selectedGameId || !filteredData.games.length) {
       return filteredData.games[0]?.mapName || 'Unknown'
     }
-    return filteredData.games.find((g: any) => g.gameId === selectedGameId)?.mapName || 'Unknown'
+    return filteredData.games.find(game => game.gameId === selectedGameId)?.mapName || 'Unknown'
   }, [selectedGameId, filteredData.games])
 
-  // Prepare heatmap kills
-  const heatmapKills = useMemo(() => {
-    return filteredData.kills.map((k: any) => ({
-      gameId: k.gameId,
-      killerPosition: k.killerPosition || { x: 0, y: 0 },
-      victimPosition: k.victimPosition || { x: 0, y: 0 },
-      killerId: k.killerId,
-      victimId: k.victimId,
-      killerTeamId: k.killerTeamId,
-      victimTeamId: k.victimTeamId,
-      weapon: k.weapon,
-      isFirstBlood: k.isFirstBlood,
-      roundNumber: k.roundNumber,
-      timestamp: k.timestamp
-    }))
-  }, [filteredData.kills])
+  const heatmapKills = useMemo(() => filteredData.kills.map(kill => ({
+    gameId: kill.gameId,
+    killerPosition: kill.killerPosition || { x: 0, y: 0 },
+    victimPosition: kill.victimPosition || { x: 0, y: 0 },
+    killerId: kill.killerId,
+    victimId: kill.victimId,
+    killerTeamId: kill.killerTeamId,
+    victimTeamId: kill.victimTeamId,
+    weapon: kill.weapon,
+    isFirstBlood: kill.isFirstBlood,
+    roundNumber: kill.roundNumber,
+    timestamp: kill.timestamp,
+  })), [filteredData.kills])
 
   if (loading) {
     return (
@@ -232,6 +209,9 @@ export function VisualizationsPanel({
     )
   }
 
+  const focusTeamPlayers = playerCards.filter(player => player.teamId === teamId)
+  const opponentPlayers = playerCards.filter(player => player.teamId !== teamId)
+
   return (
     <div className="card backdrop-blur-xl bg-gray-900/70 p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -248,9 +228,9 @@ export function VisualizationsPanel({
           <TabsTrigger value="rounds">Rounds</TabsTrigger>
           <TabsTrigger value="highlights">
             Highlights
-            {highlights.length > 0 && (
+            {filteredHighlights.length > 0 && (
               <span className="ml-1 px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded">
-                {highlights.length}
+                {filteredHighlights.length}
               </span>
             )}
           </TabsTrigger>
@@ -258,26 +238,40 @@ export function VisualizationsPanel({
 
         <TabsContent value="overview" className="space-y-6">
           <WinProbabilityTimeline
-            rounds={filteredData.rounds.map((r: any) => ({
-              ...r,
-              isClutch: evidence.clutchSituations?.some(
-                (c: any) => c.roundNumber === r.roundNumber && c.gameId === r.gameId
-              ),
-              isCritical: evidence.derived?.criticalRounds?.some(
-                (cr: any) => cr.topReviewRounds?.some(
-                  (tr: any) => tr.roundNumber === r.roundNumber
-                )
+            rounds={filteredData.rounds.map(round => {
+              const clutch = evidence.clutchSituations?.find(situation =>
+                situation.won === true &&
+                situation.roundNumber === round.roundNumber &&
+                situation.gameId === round.gameId
               )
-            }))}
+              const critical = evidence.derived?.criticalRounds?.some(stat =>
+                stat.gameId === round.gameId &&
+                stat.topReviewRounds.some(reviewRound => reviewRound.roundNumber === round.roundNumber)
+              )
+
+              return {
+                roundNumber: round.roundNumber,
+                gameId: round.gameId,
+                winnerTeamId: round.winnerTeamId,
+                clutch: clutch ? {
+                  playerName: clutch.playerName || `Player ${clutch.playerId}`,
+                  situation: clutch.situation,
+                  isFocusTeam: clutch.teamId === teamId,
+                } : undefined,
+                isCritical: critical,
+              }
+            })}
             teamId={teamId}
             teamName={teamNames.team}
             opponentName={teamNames.opponent}
             games={filteredData.games}
           />
 
-          {highlights.length > 0 && (
+          {filteredHighlights.length > 0 && (
             <HighlightReel
-              highlights={highlights.slice(0, 5)}
+              highlights={filteredHighlights.slice(0, 5)}
+              focusTeamName={teamNames.team}
+              opponentName={teamNames.opponent}
               onRoundSelect={(round, gameId) => {
                 console.log(`Selected round ${round} from game ${gameId}`)
               }}
@@ -297,22 +291,50 @@ export function VisualizationsPanel({
           />
         </TabsContent>
 
-        <TabsContent value="players">
-          <PlayerRadarChart
-            players={playerRadarData}
-            showTeamAverage={true}
-          />
+        <TabsContent value="players" className="space-y-6">
+          {focusTeamPlayers.length > 0 && (
+            <section>
+              <h3 className="text-lg font-semibold text-white mb-3">{teamNames.team}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {focusTeamPlayers.map(player => (
+                  <PlayerComparisonCard
+                    key={player.playerId}
+                    player={player}
+                    teamName={teamNames.team}
+                    isFocusTeam
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+          {opponentPlayers.length > 0 && (
+            <section>
+              <h3 className="text-lg font-semibold text-white mb-3">{teamNames.opponent}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {opponentPlayers.map(player => (
+                  <PlayerComparisonCard
+                    key={player.playerId}
+                    player={player}
+                    teamName={teamNames.opponent}
+                    isFocusTeam={false}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+          {playerCards.length === 0 && (
+            <p className="text-gray-400 text-center py-8">No player evidence available</p>
+          )}
         </TabsContent>
 
         <TabsContent value="economy">
           <EconomyTimeline
-            economyRounds={filteredData.economy.map((e: any) => ({
-              ...e,
-              teamName: e.teamId === teamId ? teamNames.team : teamNames.opponent
-            }))}
+            economyRounds={evidence.economyRounds || []}
+            games={evidence.games || []}
+            selectedGameId={selectedGameId}
             teamId={teamId}
             teamName={teamNames.team}
-            opponentTeamId={teamNames.opponentId || ''}
+            opponentTeamId={teamNames.opponentId}
             opponentName={teamNames.opponent}
           />
         </TabsContent>
@@ -322,13 +344,18 @@ export function VisualizationsPanel({
             rounds={roundTimelineData}
             teamName={teamNames.team}
             opponentName={teamNames.opponent}
-            highlightRounds={highlights.map((h: any) => h.roundNumber)}
+            highlightRounds={filteredHighlights.map(highlight => ({
+              gameId: highlight.gameId,
+              roundNumber: highlight.roundNumber,
+            }))}
           />
         </TabsContent>
 
         <TabsContent value="highlights">
           <HighlightReel
-            highlights={highlights}
+            highlights={filteredHighlights}
+            focusTeamName={teamNames.team}
+            opponentName={teamNames.opponent}
             onRoundSelect={(round, gameId) => {
               console.log(`Selected round ${round} from game ${gameId}`)
             }}
