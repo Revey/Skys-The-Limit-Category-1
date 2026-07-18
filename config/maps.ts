@@ -1,30 +1,21 @@
 export interface MapSettings {
-  imageRotation: number; // Rotation for the map image
-  dataRotation: number;  // Rotation for the heatmap data points
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
+  xMultiplier: number
+  yMultiplier: number
+  xScalarToAdd: number
+  yScalarToAdd: number
 }
 
 export const MAP_SETTINGS: Record<string, MapSettings> = {
-  'ascent': { 
-    imageRotation: 0,
-    dataRotation: 0,
-    minX: -4850,
-    maxX: 7550,
-    minY: -11100,
-    maxY: 5000
-  },
-  'bind': { imageRotation: 0, dataRotation: 0, minX: 100, maxX: 16100, minY: -7300, maxY: 6050 },
-  'haven': { imageRotation: 0, dataRotation: 0, minX: -3700, maxX: 7450, minY: -14100, maxY: -1800 },
-  'split': { imageRotation: 0, dataRotation: 0, minX: -3450, maxX: 8300, minY: -10050, maxY: 950 },
-  'icebox': { imageRotation: 0, dataRotation: 0, minX: -8300, maxX: 3100, minY: -5200, maxY: 7200 },
-  'breeze': { imageRotation: 0, dataRotation: 0, minX: -1650, maxX: 11450, minY: -6200, maxY: 7200 },
-  'fracture': { imageRotation: 0, dataRotation: 0, minX: 3000, maxX: 13900, minY: -6850, maxY: 4700 },
-  'pearl': { imageRotation: 0, dataRotation: 0, minX: -500, maxX: 11250, minY: -6100, maxY: 6550 },
-  'lotus': { imageRotation: 0, dataRotation: 0, minX: 300, maxX: 11000, minY: -5500, maxY: 6550 },
-  'sunset': { imageRotation: 0, dataRotation: 0, minX: -6000, maxX: 6450, minY: -5800, maxY: 6000 },
-  'abyss': { imageRotation: 0, dataRotation: 0, minX: -6000, maxX: 6000, minY: -6800, maxY: 5800 },
-  'corrode': { imageRotation: 0, dataRotation: 0, minX: -6000, maxX: 6000, minY: -7100, maxY: 6500 },
-};
+  ascent: { xMultiplier: 7e-05, yMultiplier: -7e-05, xScalarToAdd: 0.813895, yScalarToAdd: 0.573242 },
+  split: { xMultiplier: 7.8e-05, yMultiplier: -7.8e-05, xScalarToAdd: 0.842188, yScalarToAdd: 0.697578 },
+  fracture: { xMultiplier: 7.8e-05, yMultiplier: -7.8e-05, xScalarToAdd: 0.556952, yScalarToAdd: 1.155886 },
+  bind: { xMultiplier: 5.9e-05, yMultiplier: -5.9e-05, xScalarToAdd: 0.576941, yScalarToAdd: 0.967566 },
+  breeze: { xMultiplier: 7e-05, yMultiplier: -7e-05, xScalarToAdd: 0.465123, yScalarToAdd: 0.833078 },
+  abyss: { xMultiplier: 8.1e-05, yMultiplier: -8.1e-05, xScalarToAdd: 0.5, yScalarToAdd: 0.5 },
+  lotus: { xMultiplier: 7.2e-05, yMultiplier: -7.2e-05, xScalarToAdd: 0.454789, yScalarToAdd: 0.917752 },
+  sunset: { xMultiplier: 7.8e-05, yMultiplier: -7.8e-05, xScalarToAdd: 0.5, yScalarToAdd: 0.515625 },
+  pearl: { xMultiplier: 7.8e-05, yMultiplier: -7.8e-05, xScalarToAdd: 0.480469, yScalarToAdd: 0.916016 },
+  icebox: { xMultiplier: 7.2e-05, yMultiplier: -7.2e-05, xScalarToAdd: 0.460214, yScalarToAdd: 0.304687 },
+  corrode: { xMultiplier: 7e-05, yMultiplier: -7e-05, xScalarToAdd: 0.526158, yScalarToAdd: 0.5 },
+  haven: { xMultiplier: 7.5e-05, yMultiplier: -7.5e-05, xScalarToAdd: 1.09345, yScalarToAdd: 0.642728 },
+}

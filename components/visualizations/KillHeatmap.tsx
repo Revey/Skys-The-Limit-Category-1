@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { getMinimapImage } from '@/lib/mapImages'
-import { MAP_SETTINGS } from '@/config/maps'
+import { MAP_SETTINGS, MapSettings } from '@/config/maps'
 
 interface KillEvent {
   gameId: string
@@ -33,6 +33,25 @@ interface KillHeatmapProps {
 
 type ViewMode = 'all' | 'kills' | 'deaths' | 'firstbloods'
 
+interface MinimapPosition {
+  x: number
+  y: number
+}
+
+function worldToMinimap(
+  position: { x: number; y: number },
+  settings: MapSettings
+): MinimapPosition | null {
+  const u = position.y * settings.xMultiplier + settings.xScalarToAdd
+  const v = position.x * settings.yMultiplier + settings.yScalarToAdd
+
+  if (!Number.isFinite(u) || !Number.isFinite(v) || u < 0 || u > 1 || v < 0 || v > 1) {
+    return null
+  }
+
+  return { x: u * 100, y: v * 100 }
+}
+
 export default function KillHeatmap({
   kills,
   mapName,
@@ -45,26 +64,7 @@ export default function KillHeatmap({
   const [viewMode, setViewMode] = useState<ViewMode>('all')
   const [selectedRound, setSelectedRound] = useState<number | null>(null)
   const [hoveredKill, setHoveredKill] = useState<KillEvent | null>(null)
-
-  // Normalize coordinates to percentage positions
-  const normalizePosition = (pos: { x: number; y: number }) => {
-    const settings = MAP_SETTINGS[mapName.toLowerCase()] || { 
-      minX: -10000, 
-      maxX: 10000, 
-      minY: -10000, 
-      maxY: 10000 
-    }
-
-    const nx = ((pos.x - settings.minX) / (settings.maxX - settings.minX)) * 100
-    const ny = ((pos.y - settings.minY) / (settings.maxY - settings.minY)) * 100
-
-    // Clamp and flip Y for screen coordinates (Y increases downward)
-    // We handle rotation visually using CSS on the container instead of manual math
-    return {
-      x: Math.max(0, Math.min(100, nx)),
-      y: Math.max(0, Math.min(100, 100 - ny))
-    }
-  }
+  const mapSettings = MAP_SETTINGS[mapName.toLowerCase()]
 
   // Filter and process kills based on view mode
   const displayKills = useMemo(() => {
@@ -88,6 +88,34 @@ export default function KillHeatmap({
     }
   }, [kills, viewMode, selectedRound, teamId])
 
+  const { positionedKills, droppedPointCount } = useMemo(() => {
+    if (!mapSettings) {
+      return { positionedKills: [], droppedPointCount: displayKills.length }
+    }
+
+    let droppedCount = 0
+    const positioned = displayKills.flatMap((kill, index) => {
+      const victimPosition = worldToMinimap(kill.victimPosition, mapSettings)
+
+      if (!victimPosition) {
+        droppedCount += 1
+        return []
+      }
+
+      return [{ kill, victimPosition, index }]
+    })
+
+    return { positionedKills: positioned, droppedPointCount: droppedCount }
+  }, [displayKills, mapSettings])
+
+  useEffect(() => {
+    if (droppedPointCount > 0) {
+      console.debug(
+        `[KillHeatmap] Dropped ${droppedPointCount} out-of-bounds point(s) for ${mapName}`
+      )
+    }
+  }, [droppedPointCount, mapName])
+
   // Get unique rounds for filter
   const rounds = useMemo(() => {
     return [...new Set(kills.map(k => k.roundNumber))].sort((a, b) => a - b)
@@ -98,10 +126,9 @@ export default function KillHeatmap({
     const gridSize = 20 // Increased resolution for smoother heatmap
     const grid: number[][] = Array(gridSize).fill(null).map(() => Array(gridSize).fill(0))
 
-    displayKills.forEach(kill => {
-      const pos = normalizePosition(kill.victimPosition)
-      const gridX = Math.floor(pos.x / (100 / gridSize))
-      const gridY = Math.floor(pos.y / (100 / gridSize))
+    positionedKills.forEach(({ victimPosition }) => {
+      const gridX = Math.min(gridSize - 1, Math.floor(victimPosition.x / (100 / gridSize)))
+      const gridY = Math.min(gridSize - 1, Math.floor(victimPosition.y / (100 / gridSize)))
 
       if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
         // Apply a simple kernel for smoothing
@@ -119,7 +146,7 @@ export default function KillHeatmap({
     })
 
     return grid
-  }, [displayKills])
+  }, [positionedKills])
 
   // Find max for color scaling
   const maxDensity = Math.max(...heatmapData.flat(), 1)
@@ -137,40 +164,20 @@ export default function KillHeatmap({
       )
     }
 
-    const settings = MAP_SETTINGS[mapName.toLowerCase()] || { imageRotation: 0 }
-
     return (
-      <div 
-        className="absolute inset-0 transition-transform duration-500 ease-in-out pointer-events-none"
-        style={{ transform: `rotate(${settings.imageRotation}deg)` }}
-      >
-        <Image
-          src={mapImagePath}
-          alt={mapName}
-          fill
-          className="object-contain rounded-lg opacity-70"
-          unoptimized
-        />
-      </div>
+      <Image
+        src={mapImagePath}
+        alt={mapName}
+        fill
+        className="object-contain rounded-lg opacity-70 pointer-events-none"
+        unoptimized
+      />
     )
   }
 
-  // Get rotation-aware position for UI elements that sit outside the rotated container
-  const getRotatedPosition = (pos: { x: number; y: number }) => {
-    const settings = MAP_SETTINGS[mapName.toLowerCase()] || { dataRotation: 0 }
-    let { x, y } = normalizePosition(pos)
-    
-    const rotation = settings.dataRotation;
-    if (rotation === 90) {
-      const px = x; x = y; y = 100 - px;
-    } else if (rotation === 180) {
-      x = 100 - x; y = 100 - y;
-    } else if (rotation === 270) {
-      const px = x; x = 100 - y; y = px;
-    }
-    
-    return { x, y }
-  }
+  const hoveredPosition = hoveredKill && mapSettings
+    ? worldToMinimap(hoveredKill.victimPosition, mapSettings)
+    : null
 
   if (kills.length === 0) {
     return (
@@ -241,10 +248,7 @@ export default function KillHeatmap({
         {renderMapImage()}
 
         {/* Data points layer (Heatmap + Markers) */}
-        <div 
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: `rotate(${MAP_SETTINGS[mapName.toLowerCase()]?.dataRotation || 0}deg)` }}
-        >
+        <div className="absolute inset-0">
           {/* Heatmap overlay */}
           <div 
             className="absolute inset-0 grid"
@@ -269,22 +273,20 @@ export default function KillHeatmap({
           </div>
 
           {/* Individual kill markers */}
-          {displayKills.slice(0, 50).map((kill, idx) => {
-            const victimPos = normalizePosition(kill.victimPosition)
+          {positionedKills.filter(({ index }) => index < 50).map(({ kill, victimPosition, index }) => {
             const isTeamDeath = kill.victimTeamId === teamId
-            const dataRotation = MAP_SETTINGS[mapName.toLowerCase()]?.dataRotation || 0
 
             return (
               <div
-                key={idx}
+                key={index}
                 className={`absolute w-3 h-3 rounded-full cursor-pointer
                   ${isTeamDeath ? 'bg-red-500' : 'bg-green-500'}
                   ${kill.isFirstBlood ? 'ring-2 ring-yellow-400' : ''}
                   hover:scale-150 transition-transform z-10`}
                 style={{
-                  left: `${victimPos.x}%`,
-                  top: `${victimPos.y}%`,
-                  transform: `translate(-50%, -50%) rotate(${-dataRotation}deg)`
+                  left: `${victimPosition.x}%`,
+                  top: `${victimPosition.y}%`,
+                  transform: 'translate(-50%, -50%)'
                 }}
                 onMouseEnter={() => setHoveredKill(kill)}
                 onMouseLeave={() => setHoveredKill(null)}
@@ -293,13 +295,13 @@ export default function KillHeatmap({
           })}
         </div>
 
-        {/* Hover tooltip - stays OUTSIDE the rotated div to stay horizontal and avoid clipping */}
-        {hoveredKill && (
+        {/* Hover tooltip */}
+        {hoveredKill && hoveredPosition && (
           <div
             className="absolute z-20 bg-gray-900/95 border border-gray-700 rounded p-3 text-xs pointer-events-none min-w-[200px] shadow-xl backdrop-blur-sm"
             style={{
-              left: `${Math.min(getRotatedPosition(hoveredKill.victimPosition).x, 80)}%`,
-              top: `${Math.max(getRotatedPosition(hoveredKill.victimPosition).y - 15, 10)}%`,
+              left: `${Math.min(hoveredPosition.x, 80)}%`,
+              top: `${Math.max(hoveredPosition.y - 15, 10)}%`,
               transform: 'translateX(-50%)'
             }}
           >

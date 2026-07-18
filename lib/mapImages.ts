@@ -16,18 +16,18 @@ export const MAP_FULL_IMAGES: Record<string, string> = {
 }
 
 export const MAP_MINIMAPS: Record<string, string> = {
-  'abyss': '/maps/minimaps/Abyss_minimap.webp',
-  'ascent': '/maps/minimaps/Ascent_minimap.webp',
-  'bind': '/maps/minimaps/Bind_minimap.webp',
-  'breeze': '/maps/minimaps/Breeze_minimap.webp',
-  'corrode': '/maps/minimaps/Corrode_minimap.webp',
-  'fracture': '/maps/minimaps/Fracture_minimap.webp',
-  'haven': '/maps/minimaps/Haven_minimap.webp',
-  'icebox': '/maps/minimaps/Icebox_minimap.webp',
-  'lotus': '/maps/minimaps/Lotus_minimap.webp',
-  'pearl': '/maps/minimaps/Pearl_minimap.webp',
-  'split': '/maps/minimaps/Split_minimap.webp',
-  'sunset': '/maps/minimaps/Sunset_minimap.webp',
+  'abyss': '/maps/minimaps/riot/abyss.png',
+  'ascent': '/maps/minimaps/riot/ascent.png',
+  'bind': '/maps/minimaps/riot/bind.png',
+  'breeze': '/maps/minimaps/riot/breeze.png',
+  'corrode': '/maps/minimaps/riot/corrode.png',
+  'fracture': '/maps/minimaps/riot/fracture.png',
+  'haven': '/maps/minimaps/riot/haven.png',
+  'icebox': '/maps/minimaps/riot/icebox.png',
+  'lotus': '/maps/minimaps/riot/lotus.png',
+  'pearl': '/maps/minimaps/riot/pearl.png',
+  'split': '/maps/minimaps/riot/split.png',
+  'sunset': '/maps/minimaps/riot/sunset.png',
 }
 
 export function getMapImage(mapName: string): string | null {
