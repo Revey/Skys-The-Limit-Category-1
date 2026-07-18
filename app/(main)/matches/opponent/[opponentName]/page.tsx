@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { requireAuth } from '@/lib/auth'
+import { cookies } from 'next/headers'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
 import { TeamLogo } from '@/components/ui/TeamLogo'
 import { normalizeTeamName } from '@/lib/teamUtils'
-import { getMapsStats, CLOUD9_TEAM_ID } from '@/lib/types/evidence'
+import { getMapsStats } from '@/lib/types/evidence'
+import { getFocusTeam } from '@/lib/focusTeam'
 import { ChevronLeft, TrendingUp, TrendingDown, Calendar, Trophy } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -93,6 +94,7 @@ type Props = { params: Promise<{ opponentName: string }> }
 export default async function OpponentDetailPage({ params }: Props) {
   // await requireAuth()
   const { opponentName } = await params
+  const focusTeam = getFocusTeam(await cookies())
   const decodedName = decodeURIComponent(opponentName)
   
   // The URL might have the normalized name, so we need to match against both
@@ -123,12 +125,12 @@ export default async function OpponentDetailPage({ params }: Props) {
     const games = evidence.games || []
     const seriesId = match.gridSeriesId
 
-    const hasC9 = mapsStats.some(stat => stat.teamId === CLOUD9_TEAM_ID)
-    if (!hasC9) continue
+    const hasFocusTeam = mapsStats.some(stat => stat.teamId === focusTeam.teamId)
+    if (!hasFocusTeam) continue
 
     let foundOpponent = ''
     for (const stat of mapsStats) {
-      if (stat.teamId !== CLOUD9_TEAM_ID && stat.teamName) {
+      if (stat.teamId !== focusTeam.teamId && stat.teamName) {
         foundOpponent = stat.teamName
         break
       }
@@ -145,7 +147,7 @@ export default async function OpponentDetailPage({ params }: Props) {
       if (!gameStats.has(gameId)) {
         gameStats.set(gameId, { c9: 0, opp: 0 })
       }
-      if (stat.teamId === CLOUD9_TEAM_ID) {
+      if (stat.teamId === focusTeam.teamId) {
         gameStats.get(gameId)!.c9 = stat.roundsWon
       } else {
         gameStats.get(gameId)!.opp = stat.roundsWon

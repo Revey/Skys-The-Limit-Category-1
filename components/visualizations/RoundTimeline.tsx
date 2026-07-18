@@ -9,7 +9,7 @@ interface RoundEvent {
   description: string
   player?: string
   team?: string
-  isTeam: boolean  // Is this Cloud9's action
+  isTeam: boolean
 }
 
 interface RoundData {

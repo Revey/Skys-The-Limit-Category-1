@@ -1,6 +1,7 @@
 import type { MatchDocument } from '@/models/Match'
 import type { DashboardStatsDocument } from '@/models/DashboardStats'
-import { getMapsStats, CLOUD9_TEAM_ID } from '@/lib/types/evidence'
+import { getMapsStats } from '@/lib/types/evidence'
+import { DEFAULT_TEAM } from '@/lib/focusTeam'
 import { normalizeTeamName } from '@/lib/teamUtils'
 
 interface OpponentRecordInternal {
@@ -17,18 +18,19 @@ interface OpponentRecordInternal {
  * This is the same logic as the original computeDashboardStats but returns data in storage format
  */
 export function computeDashboardStatsForStorage(
-  matches: MatchDocument[]
+  matches: MatchDocument[],
+  teamId: string = DEFAULT_TEAM.teamId
 ): Omit<DashboardStatsDocument, '_id' | 'createdAt' | 'updatedAt'> {
-  // Filter matches with Cloud9 participation
-  const c9Matches = matches.filter((match) => {
+  // Filter matches with focus-team participation
+  const focusTeamMatches = matches.filter((match) => {
     const mapsStats = getMapsStats(match.analytics?.evidence_v1)
     if (mapsStats.length === 0) return false
-    return mapsStats.some((stat) => stat.teamId === CLOUD9_TEAM_ID)
+    return mapsStats.some((stat) => stat.teamId === teamId)
   })
 
   // Build series map for deduplication
   const seriesMap = new Map<string, MatchDocument>()
-  for (const match of c9Matches) {
+  for (const match of focusTeamMatches) {
     const seriesId = match.gridSeriesId
     if (seriesId && !seriesMap.has(seriesId)) {
       seriesMap.set(seriesId, match)
@@ -74,7 +76,7 @@ export function computeDashboardStatsForStorage(
       if (!gameStats.has(gameId)) {
         gameStats.set(gameId, { c9: { teamId: '', roundsWon: 0 }, opponent: null })
       }
-      if (stat.teamId === CLOUD9_TEAM_ID) {
+      if (stat.teamId === teamId) {
         gameStats.get(gameId)!.c9 = { teamId: stat.teamId, roundsWon: stat.roundsWon }
       } else {
         gameStats.get(gameId)!.opponent = {
@@ -140,15 +142,15 @@ export function computeDashboardStatsForStorage(
       const winnerTeamId = round.winnerTeamId
       if (winnerSide === 'attack') {
         totalAttackRounds++
-        if (winnerTeamId === CLOUD9_TEAM_ID) totalAttackWins++
+        if (winnerTeamId === teamId) totalAttackWins++
       } else if (winnerSide === 'defense') {
         totalDefenseRounds++
-        if (winnerTeamId === CLOUD9_TEAM_ID) totalDefenseWins++
+        if (winnerTeamId === teamId) totalDefenseWins++
       }
     }
   }
 
-  // Calculate struggling opponents (teams C9 has lost more against)
+  // Calculate struggling opponents the focus team has lost more against
   const strugglingAgainst = Array.from(opponentRecords.values())
     .filter((record) => record.seriesLosses > record.seriesWins)
     .sort((a, b) => b.seriesLosses - a.seriesLosses)
@@ -167,6 +169,7 @@ export function computeDashboardStatsForStorage(
   const seriesLosses = seriesResults.filter((s) => !s.isWin).length
 
   return {
+    teamId,
     totalSeries,
     seriesWins,
     seriesLosses,
@@ -176,6 +179,6 @@ export function computeDashboardStatsForStorage(
     recentSeries: seriesResults.slice(0, 10),
     strugglingAgainst,
     lastUpdated: new Date(),
-    matchesProcessed: c9Matches.length,
+    matchesProcessed: focusTeamMatches.length,
   }
 }

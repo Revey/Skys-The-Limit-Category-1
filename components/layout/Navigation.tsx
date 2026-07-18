@@ -1,15 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { TeamSelector } from './TeamSelector'
 
 export function Navigation() {
   const pathname = usePathname()
-  const router = useRouter()
-  const [logoError, setLogoError] = useState(false)
   
   // Don't show nav on root page
   if (pathname === '/') return null
@@ -41,30 +37,15 @@ export function Navigation() {
             ))}
           </div>
 
-          {/* Center - Logo */}
-          <Link href="/dashboard" className="flex items-center gap-3 group absolute left-1/2 transform -translate-x-1/2">
-            <div className="w-10 h-10 flex items-center justify-center transition-all overflow-hidden">
-              {!logoError ? (
-                <Image
-                  src="/logos/Cloud9 Assets/Cloud9 Logo_Blue_800x800px.svg"
-                  alt="Cloud9"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-contain"
-                  onError={() => setLogoError(true)}
-                  unoptimized
-                />
-              ) : (
-                <span className="text-xl font-bold text-[#00aeef]">C9</span>
-              )}
-            </div>
-            <span className="text-xl font-medium text-white">
-              Cloud9 <span className="text-[#00aeef]">StratOS</span>
+          {/* Center - Brand */}
+          <Link href="/dashboard" className="group absolute left-1/2 -translate-x-1/2">
+            <span className="text-xl font-semibold tracking-wide text-white transition-colors group-hover:text-[#00aeef]">
+              StratOS
             </span>
           </Link>
 
-          {/* Right - Empty Spacer to maintain layout balance */}
-          <div className="w-[100px]"></div>
+          {/* Right - Focus team */}
+          <TeamSelector />
         </div>
       </div>
     </nav>

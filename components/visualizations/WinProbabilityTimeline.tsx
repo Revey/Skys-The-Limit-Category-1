@@ -19,12 +19,12 @@ interface WinProbabilityTimelineProps {
     roundNumber: number
     gameId: string
     winnerTeamId: string
-    teamWinProb?: number  // 0-1, Cloud9's win probability
+    teamWinProb?: number
     momentumShift?: boolean
     isClutch?: boolean
     isCritical?: boolean
   }>
-  teamId: string  // Cloud9's team ID
+  teamId: string
   teamName: string
   opponentName: string
   games: Array<{

@@ -14,12 +14,16 @@ import { normalizeTeamName } from '@/lib/teamUtils'
 interface VisualizationsPanelProps {
   matchId: string
   selectedGameId?: string
+  teamId: string
+  teamName: string
 }
 
-// Cloud9 team ID
-const C9_TEAM_ID = '79'
-
-export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsPanelProps) {
+export function VisualizationsPanel({
+  matchId,
+  selectedGameId,
+  teamId,
+  teamName,
+}: VisualizationsPanelProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [evidence, setEvidence] = useState<any>(null)
@@ -29,7 +33,9 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
     async function fetchEvidence() {
       try {
         setLoading(true)
-        const res = await fetch(`/api/coach/match?matchId=${matchId}`)
+        const res = await fetch(
+          `/api/coach/match?matchId=${matchId}&teamId=${encodeURIComponent(teamId)}`
+        )
 
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}))
@@ -48,13 +54,13 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
     }
 
     fetchEvidence()
-  }, [matchId])
+  }, [matchId, teamId])
 
   // Build team name mapping
   const teamNames = useMemo(() => {
-    if (!evidence) return { team: 'Cloud9', opponent: 'Opponent' }
+    if (!evidence) return { team: teamName, opponent: 'Opponent', opponentId: '' }
 
-    const names: Record<string, string> = { [C9_TEAM_ID]: 'Cloud9' }
+    const names: Record<string, string> = { [teamId]: teamName }
 
     // Extract team names from various stats
     evidence.derived?.firstBloodStats?.forEach((stat: any) => {
@@ -70,14 +76,14 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
     })
 
     // Find opponent name
-    const opponentId = Object.keys(names).find(id => id !== C9_TEAM_ID)
+    const opponentId = Object.keys(names).find(id => id !== teamId)
 
     return {
-      team: names[C9_TEAM_ID] || 'Cloud9',
+      team: names[teamId] || teamName,
       opponent: opponentId ? names[opponentId] : 'Opponent',
       opponentId: opponentId || ''
     }
-  }, [evidence])
+  }, [evidence, teamId, teamName])
 
   // Filter data by selected game
   const filteredData = useMemo(() => {
@@ -107,10 +113,10 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
   const playerRadarData = useMemo(() => {
     if (!evidence?.players) return []
 
-    const c9Players = evidence.players.filter((p: any) => p.teamId === C9_TEAM_ID)
+    const focusTeamPlayers = evidence.players.filter((p: any) => p.teamId === teamId)
     const derived = evidence.derived || {}
 
-    return c9Players.map((player: any) => {
+    return focusTeamPlayers.map((player: any) => {
       const clutchStats = derived.clutchStats?.find((c: any) => c.playerId === player.playerId)
       const openingStats = derived.openingDuelStats?.find((o: any) => o.playerId === player.playerId)
       const tradeStats = derived.tradeStats?.find((t: any) => t.playerId === player.playerId)
@@ -132,7 +138,7 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
         }
       }
     })
-  }, [evidence])
+  }, [evidence, teamId])
 
   // Prepare highlight data
   const highlights = useMemo(() => {
@@ -148,13 +154,13 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
     let oppScore = 0
 
     return filteredData.rounds.map((round: any) => {
-      const isWin = round.winnerTeamId === C9_TEAM_ID
+      const isWin = round.winnerTeamId === teamId
       if (isWin) teamScore++
       else oppScore++
 
       const game = filteredData.games.find((g: any) => g.gameId === round.gameId)
       const eco = filteredData.economy.find(
-        (e: any) => e.roundNumber === round.roundNumber && e.gameId === round.gameId && e.teamId === C9_TEAM_ID
+        (e: any) => e.roundNumber === round.roundNumber && e.gameId === round.gameId && e.teamId === teamId
       )
 
       const highlight = highlights.find(
@@ -174,7 +180,7 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
         highlightTypes: highlight?.allHighlightTypes
       }
     })
-  }, [filteredData, highlights])
+  }, [filteredData, highlights, teamId])
 
   // Get current map name
   const currentMap = useMemo(() => {
@@ -263,7 +269,7 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
                 )
               )
             }))}
-            teamId={C9_TEAM_ID}
+            teamId={teamId}
             teamName={teamNames.team}
             opponentName={teamNames.opponent}
             games={filteredData.games}
@@ -283,7 +289,7 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
           <KillHeatmap
             kills={heatmapKills}
             mapName={currentMap}
-            teamId={C9_TEAM_ID}
+            teamId={teamId}
             teamName={teamNames.team}
             opponentName={teamNames.opponent}
             players={evidence.players || []}
@@ -302,9 +308,9 @@ export function VisualizationsPanel({ matchId, selectedGameId }: VisualizationsP
           <EconomyTimeline
             economyRounds={filteredData.economy.map((e: any) => ({
               ...e,
-              teamName: e.teamId === C9_TEAM_ID ? teamNames.team : teamNames.opponent
+              teamName: e.teamId === teamId ? teamNames.team : teamNames.opponent
             }))}
-            teamId={C9_TEAM_ID}
+            teamId={teamId}
             teamName={teamNames.team}
             opponentTeamId={teamNames.opponentId || ''}
             opponentName={teamNames.opponent}

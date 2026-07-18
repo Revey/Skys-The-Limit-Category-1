@@ -22,7 +22,7 @@ interface KillEvent {
 interface KillHeatmapProps {
   kills: KillEvent[]
   mapName: string
-  teamId: string  // Cloud9's team ID
+  teamId: string
   teamName: string
   opponentName: string
   players: any[]

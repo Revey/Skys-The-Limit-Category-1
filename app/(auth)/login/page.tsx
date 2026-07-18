@@ -119,19 +119,10 @@ export default function LoginPage() {
         <div className="bg-gray-900/80 backdrop-blur-xl border border-[#00aeef]/30 rounded-2xl p-8 shadow-2xl">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-24 h-12 relative mb-4">
-              <Image
-                src="/logos/Cloud9 Assets/Cloud9 Logo_Blue_800x800px.svg"
-                alt="Cloud9 Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              Cloud9 <span className="text-[#00aeef]">StratOS</span>
+              Strat<span className="text-[#00aeef]">OS</span>
             </h1>
-            <p className="text-gray-400">Valorant Team Analytics</p>
+            <p className="text-gray-400">Valorant Analytics and Coaching</p>
           </div>
 
           {/* Login Form */}

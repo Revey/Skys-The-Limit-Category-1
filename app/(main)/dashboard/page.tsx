@@ -1,9 +1,11 @@
-import { requireAuth } from '@/lib/auth'
 import { connectToDB } from '@/lib/db'
 import { DashboardStats as DashboardStatsModel, DashboardStatsDocument } from '@/models/DashboardStats'
+import { DEFAULT_TEAM, getFocusTeam } from '@/lib/focusTeam'
+import { RefreshStatsButton } from '@/components/ui/RefreshStatsButton'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,13 +46,47 @@ export default async function DashboardPage() {
   await connectToDB()
   console.log('[DASHBOARD] DB connection completed in', Date.now() - startTime, 'ms')
 
-  // Fetch pre-computed dashboard stats - single document query
-  const dashboardStatsDoc = await DashboardStatsModel.findOne({ _id: 'cloud9' }).lean() as DashboardStatsDocument | null
+  const focusTeam = getFocusTeam(await cookies())
+
+  // Prefer team-scoped stats, with a backward-compatible fallback for the legacy default document.
+  let dashboardStatsDoc = await DashboardStatsModel.findOne({ teamId: focusTeam.teamId }).lean() as DashboardStatsDocument | null
+  if (!dashboardStatsDoc && focusTeam.teamId === DEFAULT_TEAM.teamId) {
+    dashboardStatsDoc = await DashboardStatsModel.findOne({
+      _id: 'cloud9',
+      teamId: { $exists: false },
+    }).lean() as DashboardStatsDocument | null
+  }
 
   console.log('[DASHBOARD] Stats fetch completed in', Date.now() - startTime, 'ms')
 
+  if (!dashboardStatsDoc) {
+    return (
+      <div className="min-h-screen pt-24 pb-12 px-6 relative">
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+          <Image
+            src="/VCT2026.png"
+            alt="VCT Background"
+            fill
+            className="object-cover opacity-5"
+          />
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <div className="card p-10 text-center animate-fade-in-up">
+            <h1 className="text-3xl font-bold text-white mb-3">
+              No dashboard stats for <span className="text-[#00aeef]">{focusTeam.teamName}</span>
+            </h1>
+            <p className="text-gray-400 mb-6">
+              Compute this team&apos;s dashboard summary from the available match evidence.
+            </p>
+            <RefreshStatsButton teamId={focusTeam.teamId} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Convert MongoDB document to plain object
-  const stats = dashboardStatsDoc ? {
+  const stats = {
     totalSeries: dashboardStatsDoc.totalSeries,
     seriesWins: dashboardStatsDoc.seriesWins,
     seriesLosses: dashboardStatsDoc.seriesLosses,
@@ -61,15 +97,6 @@ export default async function DashboardPage() {
     defenseWinRate: dashboardStatsDoc.defenseWinRate,
     recentSeries: dashboardStatsDoc.recentSeries,
     strugglingAgainst: dashboardStatsDoc.strugglingAgainst,
-  } : {
-    totalSeries: 0,
-    seriesWins: 0,
-    seriesLosses: 0,
-    mapsPlayed: {},
-    attackWinRate: 0,
-    defenseWinRate: 0,
-    recentSeries: [],
-    strugglingAgainst: [],
   }
 
   const winRate = stats.totalSeries > 0 ? ((stats.seriesWins / stats.totalSeries) * 100).toFixed(0) : '0'
@@ -90,7 +117,7 @@ export default async function DashboardPage() {
         {/* Header */}
         <div className="mb-8 animate-fade-in-up">
           <h1 className="text-4xl font-bold text-white mb-2">
-            Cloud9 Team <span className="text-[#00aeef]">Overview</span>
+            {focusTeam.teamName} Team <span className="text-[#00aeef]">Overview</span>
           </h1>
           <p className="text-gray-400">Performance snapshot - {stats.totalSeries} series analyzed</p>
         </div>

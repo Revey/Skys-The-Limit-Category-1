@@ -1,4 +1,4 @@
-import { Schema, model, models, Types } from 'mongoose'
+import { Schema, model, models } from 'mongoose'
 
 // Series result structure for recent series display
 const SeriesResultSchema = new Schema(
@@ -38,6 +38,9 @@ const DashboardStatsSchema = new Schema(
   {
     // Always use 'cloud9' as the _id for singleton pattern
     _id: { type: String, required: true, default: 'cloud9' },
+
+    // Optional for backward compatibility with the legacy singleton document
+    teamId: { type: String, required: false, index: true },
 
     // Core statistics
     totalSeries: { type: Number, required: true },
@@ -89,6 +92,7 @@ export type OpponentRecord = {
 
 export type DashboardStatsDocument = {
   _id: string
+  teamId?: string
   totalSeries: number
   seriesWins: number
   seriesLosses: number

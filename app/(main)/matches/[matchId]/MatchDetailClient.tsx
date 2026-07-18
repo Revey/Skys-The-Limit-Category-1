@@ -22,6 +22,8 @@ interface GameData {
 interface SeriesData {
   matchId: string
   seriesId: string
+  focusTeamId: string
+  focusTeamName: string
   opponentName: string
   tournamentName: string
   matchDate: string
@@ -223,6 +225,8 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
             <VisualizationsPanel
               matchId={seriesData.matchId}
               selectedGameId={selectedGameId}
+              teamId={seriesData.focusTeamId}
+              teamName={seriesData.focusTeamName}
             />
           </div>
 
@@ -232,12 +236,19 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
               matchId={seriesData.matchId}
               selectedGameId={selectedGameId}
               onGameChange={setSelectedGameId}
+              teamId={seriesData.focusTeamId}
+              teamName={seriesData.focusTeamName}
             />
           </div>
 
           {/* Coach Panel - with synced map selection */}
           <div className="backdrop-blur-xl">
-            <CoachPanel matchId={seriesData.matchId} selectedGameId={selectedGameId} />
+            <CoachPanel
+              matchId={seriesData.matchId}
+              selectedGameId={selectedGameId}
+              teamId={seriesData.focusTeamId}
+              teamName={seriesData.focusTeamName}
+            />
           </div>
         </div>
       </div>

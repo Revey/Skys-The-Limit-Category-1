@@ -4,14 +4,33 @@ import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
 import { computeMatchAnalytics } from '@/lib/analytics/computeMatchAnalytics'
 import { generateCoachingReport } from '@/lib/ai/coach'
+import { DEFAULT_TEAM } from '@/lib/focusTeam'
+import { normalizeTeamName } from '@/lib/teamUtils'
 
 // Increase timeout for LLM calls (Vercel default is 10s, we need more for Gemini)
 export const maxDuration = 60 // 60 seconds max
 
+function getTeamContext(evidence: any, teamId: string) {
+  const mapsStats = evidence?.derived?.mapsStats || []
+  const focusTeamStat = mapsStats.find((stat: any) => stat.teamId === teamId)
+  const opponentStat = mapsStats.find((stat: any) => stat.teamId !== teamId)
+
+  return {
+    teamName: focusTeamStat?.teamName
+      ? normalizeTeamName(focusTeamStat.teamName)
+      : teamId === DEFAULT_TEAM.teamId
+        ? DEFAULT_TEAM.teamName
+        : `Team ${teamId}`,
+    opponentName: opponentStat?.teamName
+      ? normalizeTeamName(opponentStat.teamName)
+      : 'Unknown opponent',
+  }
+}
+
 /**
  * GET /api/coach/match
  * Fetch match data with evidence_v1
- * Query params: matchId or seriesId
+ * Query params: matchId or seriesId, plus optional teamId
  */
 export async function GET(req: NextRequest) {
   // await requireAuth()
@@ -20,6 +39,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const matchId = searchParams.get('matchId')
   const seriesId = searchParams.get('seriesId')
+  const teamId = searchParams.get('teamId')?.trim() || DEFAULT_TEAM.teamId
 
   if (!matchId && !seriesId) {
     return NextResponse.json(
@@ -41,6 +61,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     }
 
+    const teamContext = getTeamContext(match.analytics?.evidence_v1, teamId)
+
     // Build response with evidence
     const response = {
       matchId: match._id.toString(),
@@ -48,7 +70,7 @@ export async function GET(req: NextRequest) {
         seriesId: match.gridSeriesId || '',
         tournamentId: match.tournamentId || '',
         map: match.map,
-        opponentName: match.opponentName,
+        opponentName: teamContext.opponentName,
         eventName: match.eventName,
         date: match.date,
         games: match.analytics?.evidence_v1?.games || [],
@@ -431,6 +453,9 @@ export async function POST(req: NextRequest) {
   // await requireAuth()
   await connectToDB()
 
+  const { searchParams } = new URL(req.url)
+  const teamId = searchParams.get('teamId')?.trim() || DEFAULT_TEAM.teamId
+
   let body: unknown
   try {
     body = await req.json()
@@ -450,9 +475,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Match not found' }, { status: 404 })
   }
 
+  const teamContext = getTeamContext(match.analytics?.evidence_v1, teamId)
+
   let analytics
   try {
-    analytics = computeMatchAnalytics(match)
+    analytics = computeMatchAnalytics(match, teamId, teamContext.teamName)
   } catch (err) {
     console.error('Failed to compute analytics for match', matchId, err)
     return NextResponse.json(
@@ -475,15 +502,15 @@ export async function POST(req: NextRequest) {
         analytics.map = game.mapName
 
         // Update round stats from filtered data
-        const c9Stats = evidence?.derived?.mapsStats?.find((s: any) => s.teamId === '79')
-        const oppStats = evidence?.derived?.mapsStats?.find((s: any) => s.teamId !== '79')
+        const focusTeamStats = evidence?.derived?.mapsStats?.find((s: any) => s.teamId === teamId)
+        const oppStats = evidence?.derived?.mapsStats?.find((s: any) => s.teamId !== teamId)
         
-        if (c9Stats) {
-          analytics.teamRoundsWon = c9Stats.roundsWon
+        if (focusTeamStats) {
+          analytics.teamRoundsWon = focusTeamStats.roundsWon
         }
         if (oppStats) {
           analytics.teamRoundsLost = oppStats.roundsWon
-          analytics.opponentName = oppStats.teamName
+          analytics.opponentName = normalizeTeamName(oppStats.teamName)
         }
         analytics.roundsPlayed = (analytics.teamRoundsWon || 0) + (analytics.teamRoundsLost || 0)
       }

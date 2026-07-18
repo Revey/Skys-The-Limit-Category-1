@@ -9,7 +9,7 @@ export default async function AboutPage() {
         {/* Header */}
         <div className="mb-8 animate-fade-in-up">
           <h1 className="text-4xl font-bold text-white mb-2">
-            About <span className="text-[#00aeef]">C9 StratOS</span>
+            About <span className="text-[#00aeef]">StratOS</span>
           </h1>
           <p className="text-gray-400">Project information, legal disclaimers, and credits</p>
         </div>
@@ -23,7 +23,7 @@ export default async function AboutPage() {
               Project Overview
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              C9 StratOS is a comprehensive match analytics platform designed specifically for Cloud9&apos;s Valorant VCT team.
+              StratOS is a comprehensive match analytics platform designed for professional Valorant teams.
               It provides advanced performance metrics, AI-powered coaching insights, and evidence-based tactical analysis
               to help teams prepare for matches and improve strategic decision-making.
             </p>
@@ -36,10 +36,10 @@ export default async function AboutPage() {
               Hackathon Submission
             </h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              This project is a submission for the <strong className="text-[#00aeef]">Cloud9 x JetBrains Hackathon</strong>.
+              This project began as a submission for a <strong className="text-[#00aeef]">JetBrains esports hackathon</strong>.
             </p>
             <p className="text-gray-400 text-sm">
-              Cloud9, Valorant, and VCT team logos are the property of their respective owners.
+              Valorant, VCT, and team logos are the property of their respective owners.
             </p>
           </section>
 
@@ -51,7 +51,7 @@ export default async function AboutPage() {
             </h2>
             <div className="space-y-3 text-gray-300 leading-relaxed">
               <p>
-                C9 StratOS is <strong>not endorsed by Riot Games</strong> and does not reflect the views or opinions
+                StratOS is <strong>not endorsed by Riot Games</strong> and does not reflect the views or opinions
                 of Riot Games or anyone officially involved in producing or managing Riot Games properties.
               </p>
               <p>
@@ -150,7 +150,7 @@ export default async function AboutPage() {
                 </p>
                 <p className="flex items-center gap-2">
                   <span className="text-green-400">•</span>
-                  <strong>Cloud9 Assets</strong> - Official team branding and logos
+                  <strong>Team Assets</strong> - Official team branding and logos
                 </p>
               </div>
             </section>

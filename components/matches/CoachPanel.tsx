@@ -6,6 +6,8 @@ import { Sparkles, AlertCircle } from 'lucide-react'
 interface CoachPanelProps {
   matchId: string
   selectedGameId?: string // Sync with parent's map selection
+  teamId: string
+  teamName: string
 }
 
 interface GameInfo {
@@ -221,7 +223,12 @@ function renderMarkdown(text: string): JSX.Element {
   return <>{elements}</>
 }
 
-export function CoachPanel({ matchId, selectedGameId: externalGameId }: CoachPanelProps) {
+export function CoachPanel({
+  matchId,
+  selectedGameId: externalGameId,
+  teamId,
+  teamName,
+}: CoachPanelProps) {
   const [loading, setLoading] = useState(false)
   const [fetchingGames, setFetchingGames] = useState(true)
   const [games, setGames] = useState<GameInfo[]>([])
@@ -236,7 +243,9 @@ export function CoachPanel({ matchId, selectedGameId: externalGameId }: CoachPan
   useEffect(() => {
     async function fetchGames() {
       try {
-        const res = await fetch(`/api/coach/match?matchId=${matchId}`)
+        const res = await fetch(
+          `/api/coach/match?matchId=${matchId}&teamId=${encodeURIComponent(teamId)}`
+        )
         if (res.ok) {
           const data = await res.json()
           if (data?.evidence?.games) {
@@ -250,7 +259,7 @@ export function CoachPanel({ matchId, selectedGameId: externalGameId }: CoachPan
       }
     }
     fetchGames()
-  }, [matchId])
+  }, [matchId, teamId])
 
   // Clear report when map changes
   useEffect(() => {
@@ -268,7 +277,7 @@ export function CoachPanel({ matchId, selectedGameId: externalGameId }: CoachPan
     setReport(null)
 
     try {
-      const res = await fetch('/api/coach/match', {
+      const res = await fetch(`/api/coach/match?teamId=${encodeURIComponent(teamId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ matchId, gameId: selectedGameId }),
@@ -308,7 +317,7 @@ export function CoachPanel({ matchId, selectedGameId: externalGameId }: CoachPan
           <div>
             <h2 className="text-xl font-semibold text-white">AI Coaching Report</h2>
             <p className="text-sm text-gray-400">
-              Generate insights for <span className="text-purple-400 capitalize">{selectedGame?.mapName || 'selected map'}</span>
+              Generate {teamName} insights for <span className="text-purple-400 capitalize">{selectedGame?.mapName || 'selected map'}</span>
             </p>
           </div>
         </div>

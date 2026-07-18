@@ -9,6 +9,8 @@ interface EvidencePanelProps {
   matchId: string
   selectedGameId?: string // Sync with parent's map selection
   onGameChange?: (gameId: string) => void // Callback when map changes
+  teamId: string
+  teamName: string
 }
 
 interface MatchWithEvidence {
@@ -29,12 +31,13 @@ interface MatchWithEvidence {
   } | null
 }
 
-// Known team ID to name mapping
-const KNOWN_TEAMS: Record<string, string> = {
-  '79': 'Cloud9',
-}
-
-export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameChange }: EvidencePanelProps) {
+export function EvidencePanel({
+  matchId,
+  selectedGameId: externalGameId,
+  onGameChange,
+  teamId: focusTeamId,
+  teamName: focusTeamName,
+}: EvidencePanelProps) {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<MatchWithEvidence | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +49,9 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
   useEffect(() => {
     async function fetchEvidence() {
       try {
-        const res = await fetch(`/api/coach/match?matchId=${matchId}`)
+        const res = await fetch(
+          `/api/coach/match?matchId=${matchId}&teamId=${encodeURIComponent(focusTeamId)}`
+        )
 
         if (!res.ok) {
           let msg = 'Failed to fetch evidence'
@@ -75,12 +80,12 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
     }
 
     fetchEvidence()
-  }, [matchId, externalGameId])
+  }, [matchId, externalGameId, focusTeamId])
 
   // Build team ID to name mapping from evidence data
   // IMPORTANT: Apply normalizeTeamName to remove any "(1)" suffixes
   const teamMap = useMemo(() => {
-    const map: Record<string, string> = { ...KNOWN_TEAMS }
+    const map: Record<string, string> = { [focusTeamId]: focusTeamName }
 
     if (!data?.evidence) return map
 
@@ -103,7 +108,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
     })
 
     return map
-  }, [data])
+  }, [data, focusTeamId, focusTeamName])
 
   // Filter stats for selected game/map
   const filteredStats = useMemo(() => {
@@ -742,7 +747,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(teamGroups).map(([teamId, picks]) => (
                     <div key={teamId} className="bg-black/30 rounded-lg p-4 border border-gray-800">
-                      <div className={`text-sm font-semibold mb-3 ${teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                      <div className={`text-sm font-semibold mb-3 ${teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(teamId)}
                       </div>
                       <div className="space-y-2">
@@ -788,7 +793,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
               <tbody>
                 {filteredStats.firstBloodStats.map((stat) => (
                   <tr key={stat.teamId} className="border-b border-gray-800/50 hover:bg-black/20">
-                    <td className={`py-4 px-6 font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                    <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                       {stat.teamName}
                     </td>
                     <td className="py-4 px-6 text-center text-[#00aeef] font-semibold">{stat.firstBloods}</td>
@@ -825,7 +830,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
               <tbody>
                 {filteredStats.plantStats.map((stat) => (
                   <tr key={stat.teamId} className="border-b border-gray-800/50 hover:bg-black/20">
-                    <td className={`py-4 px-6 font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                    <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                       {stat.teamName}
                     </td>
                     <td className="py-4 px-6 text-center text-[#00aeef] font-semibold">{stat.plants}</td>
@@ -862,7 +867,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
                     <div className="space-y-2">
                       {Object.values(stat.attackStats || {}).map((attackStat: any) => (
                         <div key={attackStat.teamId} className="bg-black/40 rounded p-3">
-                          <div className={`text-sm font-medium mb-2 ${attackStat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                          <div className={`text-sm font-medium mb-2 ${attackStat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                             {normalizeTeamName(attackStat.teamName)}
                           </div>
                           <div className="flex justify-between text-sm">
@@ -885,7 +890,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
                     <div className="space-y-2">
                       {Object.values(stat.defenseStats || {}).map((defenseStat: any) => (
                         <div key={defenseStat.teamId} className="bg-black/40 rounded p-3">
-                          <div className={`text-sm font-medium mb-2 ${defenseStat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                          <div className={`text-sm font-medium mb-2 ${defenseStat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                             {normalizeTeamName(defenseStat.teamName)}
                           </div>
                           <div className="flex justify-between text-sm">
@@ -934,10 +939,10 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
                   .sort((a, b) => b.isolatedDeathsCount - a.isolatedDeathsCount)
                   .map((player) => (
                     <tr key={player.playerId} className="border-b border-gray-800/50 hover:bg-black/20">
-                      <td className={`py-4 px-6 font-medium ${player.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                      <td className={`py-4 px-6 font-medium ${player.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                         {player.playerName || `Player ${player.playerId}`}
                       </td>
-                      <td className={`py-4 px-6 text-center font-medium ${player.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                      <td className={`py-4 px-6 text-center font-medium ${player.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(player.teamId)}
                       </td>
                       <td className="py-4 px-6 text-center text-red-400 font-semibold">
@@ -969,7 +974,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredStats.economyStats.map((stat: any) => (
               <div key={stat.teamId}>
-                <h3 className={`font-semibold mb-4 ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                <h3 className={`font-semibold mb-4 ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                   {normalizeTeamName(stat.teamName)}
                 </h3>
                 <div className="space-y-3">
@@ -1026,10 +1031,10 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
 
                   return (
                     <tr key={stat.playerId} className="border-b border-gray-800/50 hover:bg-black/20">
-                      <td className={`py-4 px-6 font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                      <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                         {stat.playerName || `Player ${stat.playerId}`}
                       </td>
-                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(stat.teamId)}
                       </td>
                       <td className="py-4 px-6 text-center text-gray-300">{stat.openingDuels}</td>
@@ -1084,10 +1089,10 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
 
                   return (
                     <tr key={stat.playerId} className="border-b border-gray-800/50 hover:bg-black/20">
-                      <td className={`py-4 px-6 font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                      <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                         {stat.playerName || `Player ${stat.playerId}`}
                       </td>
-                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(stat.teamId)}
                       </td>
                       <td className="py-4 px-6 text-center text-gray-300">{stat.clutchAttempts}</td>
@@ -1145,10 +1150,10 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
 
                   return (
                     <tr key={stat.playerId} className="border-b border-gray-800/50 hover:bg-black/20">
-                      <td className={`py-4 px-6 font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                      <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                         {stat.playerName || `Player ${stat.playerId}`}
                       </td>
-                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(stat.teamId)}
                       </td>
                       <td className="py-4 px-6 text-center text-gray-300">{stat.deaths}</td>
@@ -1159,7 +1164,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
                           {(rate * 100).toFixed(1)}%
                         </span>
                       </td>
-                      <td className={`py-4 px-6 text-center ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                      <td className={`py-4 px-6 text-center ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                         {stat.tradesGotten}
                       </td>
                     </tr>
@@ -1196,10 +1201,10 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
                   .map((stat: any) => {
                     return (
                       <tr key={stat.playerId} className="border-b border-gray-800/50 hover:bg-black/20">
-                        <td className={`py-4 px-6 font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                        <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                           {stat.playerName || `Player ${stat.playerId}`}
                         </td>
-                        <td className={`py-4 px-6 text-center font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                        <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                           {getTeamName(stat.teamId)}
                         </td>
                         <td className="py-4 px-6 text-center text-gray-300">{stat.twoKs}</td>
@@ -1256,10 +1261,10 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
 
                   return (
                     <tr key={stat.playerId} className="border-b border-gray-800/50 hover:bg-black/20">
-                      <td className={`py-4 px-6 font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                      <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                         {stat.playerName || `Player ${stat.playerId}`}
                       </td>
-                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-400'}`}>
+                      <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(stat.teamId)}
                       </td>
                       <td className="py-4 px-6">
@@ -1270,7 +1275,7 @@ export function EvidencePanel({ matchId, selectedGameId: externalGameId, onGameC
                         </div>
                       </td>
                       <td className="py-4 px-6 text-center text-gray-300">{stat.totalAbilityUses}</td>
-                      <td className={`py-4 px-6 text-center ${stat.teamId === '79' ? 'text-[#00aeef]' : 'text-gray-300'}`}>
+                      <td className={`py-4 px-6 text-center ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                         {stat.abilitiesPerRound.toFixed(1)}
                       </td>
                       <td className="py-4 px-6">

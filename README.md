@@ -1,6 +1,6 @@
-C9 StratOS
+# StratOS
 
-AI-powered Valorant assistant coach (Cloud9 focused). Next.js 15 App Router + TypeScript + Tailwind + MongoDB (Mongoose) with simple cookie auth.
+AI-powered Valorant analytics and assistant coaching for professional teams. Built with Next.js 15 App Router, TypeScript, Tailwind CSS, and MongoDB via Mongoose.
 
 Setup
 - Prereqs: Node.js 18+, npm, MongoDB Atlas URI

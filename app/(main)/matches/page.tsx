@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { requireAuth } from '@/lib/auth'
+import { cookies } from 'next/headers'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
 import { TeamLogo } from '@/components/ui/TeamLogo'
 import { normalizeTeamName, getTeamKey } from '@/lib/teamUtils'
-import { getMapsStats, CLOUD9_TEAM_ID } from '@/lib/types/evidence'
+import { getMapsStats } from '@/lib/types/evidence'
+import { getFocusTeam } from '@/lib/focusTeam'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,11 +18,11 @@ interface OpponentStats {
   mapsLost: number
 }
 
-function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
-  const c9Matches = matches.filter(match => {
+function getOpponentStats(matches: MatchDocument[], focusTeamId: string): OpponentStats[] {
+  const focusTeamMatches = matches.filter(match => {
     const mapsStats = getMapsStats(match.analytics?.evidence_v1)
     if (mapsStats.length === 0) return false
-    return mapsStats.some(stat => stat.teamId === CLOUD9_TEAM_ID)
+    return mapsStats.some(stat => stat.teamId === focusTeamId)
   })
 
   // Use normalized team key for grouping
@@ -34,7 +35,7 @@ function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
     mapsLost: number
   }>()
 
-  for (const match of c9Matches) {
+  for (const match of focusTeamMatches) {
     const evidence = match.analytics?.evidence_v1
     if (!evidence) continue
 
@@ -43,7 +44,7 @@ function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
 
     let rawOpponentName = 'Unknown'
     for (const stat of mapsStats) {
-      if (stat.teamId !== CLOUD9_TEAM_ID && stat.teamName) {
+      if (stat.teamId !== focusTeamId && stat.teamName) {
         rawOpponentName = stat.teamName
         break
       }
@@ -52,8 +53,6 @@ function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
     // Normalize the team name (removes "(1)" suffix)
     const normalizedName = normalizeTeamName(rawOpponentName)
     const teamKey = getTeamKey(rawOpponentName)
-
-    if (normalizedName === 'Cloud9') continue
 
     if (!opponentMap.has(teamKey)) {
       opponentMap.set(teamKey, {
@@ -77,7 +76,7 @@ function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
         if (!gameStats.has(gameId)) {
           gameStats.set(gameId, { c9: 0, opp: 0 })
         }
-        if (stat.teamId === CLOUD9_TEAM_ID) {
+        if (stat.teamId === focusTeamId) {
           gameStats.get(gameId)!.c9 = stat.roundsWon
         } else {
           gameStats.get(gameId)!.opp = stat.roundsWon
@@ -118,6 +117,7 @@ function getOpponentStats(matches: MatchDocument[]): OpponentStats[] {
 
 export default async function MatchesPage() {
   // await requireAuth()
+  const focusTeam = getFocusTeam(await cookies())
   await connectToDB()
 
   const matches = (await Match.aggregate([
@@ -131,7 +131,7 @@ export default async function MatchesPage() {
     { $sort: { _id: -1 } }
   ])) as unknown as MatchDocument[]
 
-  const opponents = getOpponentStats(matches)
+  const opponents = getOpponentStats(matches, focusTeam.teamId)
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-6">
@@ -140,7 +140,7 @@ export default async function MatchesPage() {
         <div className="mb-8 animate-fade-in-up">
           <h1 className="text-4xl font-bold text-white mb-2">Opponents</h1>
           <p className="text-gray-400">
-            Cloud9 match history by opponent • {opponents.length} teams faced
+            {focusTeam.teamName} match history by opponent • {opponents.length} teams faced
           </p>
         </div>
 
@@ -213,7 +213,7 @@ export default async function MatchesPage() {
 
         {opponents.length === 0 && (
           <div className="text-center py-20 text-gray-500">
-            No Cloud9 matches found.
+            No matches found for {focusTeam.teamName}.
           </div>
         )}
       </div>

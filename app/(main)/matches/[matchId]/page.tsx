@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { requireAuth } from '@/lib/auth'
+import { cookies } from 'next/headers'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
 import { MatchDetailClient } from './MatchDetailClient'
-import { getMapsStats, CLOUD9_TEAM_ID } from '@/lib/types/evidence'
+import { getMapsStats } from '@/lib/types/evidence'
+import { getFocusTeam } from '@/lib/focusTeam'
 import { normalizeTeamName } from '@/lib/teamUtils'
 
 // Tournament name mapping based on series ID ranges
@@ -47,6 +48,7 @@ type Props = { params: Promise<{ matchId: string }> }
 export default async function MatchDetailPage({ params }: Props) {
   // await requireAuth()
   const { matchId } = await params
+  const focusTeam = getFocusTeam(await cookies())
   await connectToDB()
 
   const match = (await Match.findById(matchId).lean()) as unknown as MatchDocument | null
@@ -87,14 +89,31 @@ export default async function MatchDetailPage({ params }: Props) {
   const players = evidence.players || []
   const mapsStats = getMapsStats(evidence)
 
-  // Find opponent name and normalize it (removes "(1)" suffixes)
-  let opponentName = match.opponentName || 'Unknown'
-  for (const stat of mapsStats) {
-    if (stat.teamId !== CLOUD9_TEAM_ID && stat.teamName) {
-      opponentName = normalizeTeamName(stat.teamName)
-      break
-    }
+  if (!mapsStats.some((stat) => stat.teamId === focusTeam.teamId)) {
+    return (
+      <div className="min-h-screen pt-24 pb-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="card p-8 text-center">
+            <p className="text-gray-400 text-lg">
+              {focusTeam.teamName} did not play in this match.
+            </p>
+            <Link href="/matches" className="text-[#00aeef] hover:text-[#00c8ff] mt-4 inline-block">
+              ← Back to matches
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
+
+  // Find opponent name and normalize it (removes "(1)" suffixes)
+  const opponentStat = mapsStats.find(
+    (stat) => stat.teamId !== focusTeam.teamId && stat.teamName
+  )
+  const opponentTeamId = opponentStat?.teamId || ''
+  const opponentName = opponentStat?.teamName
+    ? normalizeTeamName(opponentStat.teamName)
+    : 'Unknown'
 
   // Build game data with scores
   const gameStats = new Map<string, { c9: number; opp: number }>()
@@ -103,9 +122,9 @@ export default async function MatchDetailPage({ params }: Props) {
     if (!gameStats.has(gameId)) {
       gameStats.set(gameId, { c9: 0, opp: 0 })
     }
-    if (stat.teamId === CLOUD9_TEAM_ID) {
+    if (stat.teamId === focusTeam.teamId) {
       gameStats.get(gameId)!.c9 = stat.roundsWon
-    } else {
+    } else if (stat.teamId === opponentTeamId) {
       gameStats.get(gameId)!.opp = stat.roundsWon
     }
   }
@@ -146,14 +165,14 @@ export default async function MatchDetailPage({ params }: Props) {
 
     for (const kill of gameKills) {
       // Count kills for killer
-      if (kill.killerId && kill.killerTeamId === CLOUD9_TEAM_ID) {
+      if (kill.killerId && kill.killerTeamId === focusTeam.teamId) {
         if (!playerStatsMap.has(kill.killerId)) {
           playerStatsMap.set(kill.killerId, { playerId: kill.killerId, playerName: '', teamId: kill.killerTeamId, kills: 0, deaths: 0 })
         }
         playerStatsMap.get(kill.killerId)!.kills++
       }
       // Count deaths for victim
-      if (kill.victimId && kill.victimTeamId === CLOUD9_TEAM_ID) {
+      if (kill.victimId && kill.victimTeamId === focusTeam.teamId) {
         if (!playerStatsMap.has(kill.victimId)) {
           playerStatsMap.set(kill.victimId, { playerId: kill.victimId, playerName: '', teamId: kill.victimTeamId, kills: 0, deaths: 0 })
         }
@@ -176,6 +195,8 @@ export default async function MatchDetailPage({ params }: Props) {
   const seriesData = {
     matchId: String(match._id),
     seriesId,
+    focusTeamId: focusTeam.teamId,
+    focusTeamName: focusTeam.teamName,
     opponentName,
     tournamentName: getTournamentName(seriesId),
     matchDate: estimateMatchDate(seriesId),

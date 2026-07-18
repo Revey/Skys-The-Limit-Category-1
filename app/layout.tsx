@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { Navigation } from '@/components/layout/Navigation'
 
 export const metadata = {
-  title: 'C9 StratOS',
-  description: 'AI assistant coach for Valorant — C9 StratOS',
+  title: 'StratOS',
+  description: 'AI-powered Valorant analytics and coaching for professional teams',
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </main>
         <footer className="border-t border-gray-800 bg-black/50 backdrop-blur">
           <div className="container-base py-4 text-sm text-gray-500">
-            © {new Date().getFullYear()} Cloud9 StratOS — AI-Powered Valorant Analytics
+            © {new Date().getFullYear()} StratOS — AI-Powered Valorant Analytics
           </div>
         </footer>
       </body>

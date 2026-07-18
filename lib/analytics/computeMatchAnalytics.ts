@@ -1,3 +1,6 @@
+import { DEFAULT_TEAM } from '@/lib/focusTeam'
+import { normalizeTeamName } from '@/lib/teamUtils'
+
 export interface PlayerStats {
   name: string
   kills: number
@@ -34,16 +37,22 @@ export interface MatchAnalytics {
   hasEvidence: boolean
 }
 
-// Cloud9 team ID in GRID
-const CLOUD9_TEAM_ID = '79'
+export function computeMatchAnalytics(
+  match: any,
+  focusTeamId: string = DEFAULT_TEAM.teamId,
+  focusTeamName: string = DEFAULT_TEAM.teamName
+): MatchAnalytics {
+  const evidence = match.analytics?.evidence_v1
+  const mapsStats = evidence?.derived?.mapsStats || []
+  const focusTeamStat = mapsStats.find((stat: any) => stat.teamId === focusTeamId)
+  const opponentStat = mapsStats.find((stat: any) => stat.teamId !== focusTeamId)
 
-export function computeMatchAnalytics(match: any): MatchAnalytics {
-  const teamName =
-    match.team && typeof match.team === 'object' && match.team.name
-      ? match.team.name
-      : 'Cloud9'
-
-  const opponentName = match.opponentName || 'Unknown opponent'
+  const teamName = focusTeamStat?.teamName
+    ? normalizeTeamName(focusTeamStat.teamName)
+    : focusTeamName
+  const opponentName = opponentStat?.teamName
+    ? normalizeTeamName(opponentStat.teamName)
+    : match.opponentName || 'Unknown opponent'
   const map = match.map || 'Unknown map'
   const eventName = match.eventName || undefined
 
@@ -60,19 +69,22 @@ export function computeMatchAnalytics(match: any): MatchAnalytics {
   }
   const date = dateValue.toISOString().slice(0, 10)
 
-  // Check for evidence_v1
-  const evidence = match.analytics?.evidence_v1
   const hasEvidence = !!evidence
 
   // Compute from evidence if available
   if (hasEvidence) {
-    return computeFromEvidence(match, evidence, {
-      teamName,
-      opponentName,
-      map,
-      eventName,
-      date,
-    })
+    return computeFromEvidence(
+      match,
+      evidence,
+      {
+        teamName,
+        opponentName,
+        map,
+        eventName,
+        date,
+      },
+      focusTeamId
+    )
   }
 
   // Fallback to legacy computation
@@ -88,14 +100,12 @@ function computeFromEvidence(
     map: string
     eventName?: string
     date: string
-  }
+  },
+  focusTeamId: string
 ): MatchAnalytics {
   const rounds = evidence.rounds || []
   const players = evidence.players || []
   const derived = evidence.derived || {}
-
-  // Determine Cloud9's team ID from this series
-  const c9TeamId = findCloud9TeamId(evidence, match)
 
   // Compute round stats
   let attackWins = 0,
@@ -106,10 +116,10 @@ function computeFromEvidence(
     teamRoundsLost = 0
 
   for (const round of rounds) {
-    const isC9Winner = round.winnerTeamId === c9TeamId
+    const isFocusTeamWinner = round.winnerTeamId === focusTeamId
     const winnerSide = round.winnerSide
 
-    if (isC9Winner) {
+    if (isFocusTeamWinner) {
       teamRoundsWon++
       if (winnerSide === 'attack') attackWins++
       else if (winnerSide === 'defense') defenseWins++
@@ -117,14 +127,14 @@ function computeFromEvidence(
       teamRoundsLost++
     }
 
-    // Track totals based on C9's side this round
+    // Track totals based on the focus team's side this round
     // winnerSide tells us what side the WINNER was on
     if (winnerSide === 'attack') {
-      if (isC9Winner) attackTotal++
-      else defenseTotal++ // C9 was defense, lost
+      if (isFocusTeamWinner) attackTotal++
+      else defenseTotal++
     } else if (winnerSide === 'defense') {
-      if (isC9Winner) defenseTotal++
-      else attackTotal++ // C9 was attack, lost
+      if (isFocusTeamWinner) defenseTotal++
+      else attackTotal++
     }
   }
 
@@ -135,16 +145,16 @@ function computeFromEvidence(
     for (const gameRoundList of Object.values(gameRounds)) {
       for (const round of gameRoundList as any[]) {
         const roundNum = round.roundNumber || 0
-        const isC9Winner = round.winnerTeamId === c9TeamId
+        const isFocusTeamWinner = round.winnerTeamId === focusTeamId
         const isFirstHalf = roundNum <= 12
 
-        // Assume C9 attacks first half (common for higher seed)
+        // Assume the focus team attacks first half when side data is unavailable.
         if (isFirstHalf) {
           attackTotal++
-          if (isC9Winner) attackWins++
+          if (isFocusTeamWinner) attackWins++
         } else if (roundNum <= 24) {
           defenseTotal++
-          if (isC9Winner) defenseWins++
+          if (isFocusTeamWinner) defenseWins++
         }
         // OT rounds: harder to track without side data
       }
@@ -162,17 +172,17 @@ function computeFromEvidence(
 
   // First blood conversion from derived stats
   const fbStats = derived.firstBloodStats || []
-  const c9FbStat = fbStats.find((s: any) => s.teamId === c9TeamId)
-  const firstBloodConversion = c9FbStat?.conversionRate ?? undefined
+  const focusTeamFbStat = fbStats.find((s: any) => s.teamId === focusTeamId)
+  const firstBloodConversion = focusTeamFbStat?.conversionRate ?? undefined
 
   // Post-plant win rate
   const plantStats = derived.plantStats || []
-  const c9PlantStat = plantStats.find((s: any) => s.teamId === c9TeamId)
-  const postPlantWinRate = c9PlantStat?.postPlantWinRate ?? undefined
+  const focusTeamPlantStat = plantStats.find((s: any) => s.teamId === focusTeamId)
+  const postPlantWinRate = focusTeamPlantStat?.postPlantWinRate ?? undefined
 
   // Map evidence players to PlayerStats
   const playerStats: PlayerStats[] = players
-    .filter((p: any) => p.teamId === c9TeamId)
+    .filter((p: any) => p.teamId === focusTeamId)
     .map((p: any) => {
       // Try to find player name from match.players
       const matchPlayer = Array.isArray(match.players)
@@ -257,21 +267,6 @@ function computeLegacy(
     hasEvidence: false,
   }
 }
-
-function findCloud9TeamId(evidence: any, match: any): string {
-  // Try to find Cloud9 from derived stats
-  const fbStats = evidence.derived?.firstBloodStats || []
-  const c9Stat = fbStats.find(
-    (s: any) =>
-      s.teamName?.toLowerCase().includes('cloud9') ||
-      s.teamName?.toLowerCase().includes('c9')
-  )
-  if (c9Stat) return c9Stat.teamId
-
-  // Fallback to known ID
-  return CLOUD9_TEAM_ID
-}
-
 function groupBy<T>(arr: T[], key: keyof T): Record<string, T[]> {
   return arr.reduce(
     (acc, item) => {

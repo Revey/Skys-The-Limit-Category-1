@@ -624,7 +624,7 @@ function buildInteractivePrompt(
   relevantStats: string,
   context?: CoachQueryInput['context']
 ): string {
-  const systemPrompt = `You are an expert Valorant coach assistant for Cloud9's professional team.
+  const systemPrompt = `You are an expert Valorant coach assistant for the selected professional team.
 You have access to detailed match analytics and must answer coaching questions using ONLY the data provided.
 
 CRITICAL RULES:
