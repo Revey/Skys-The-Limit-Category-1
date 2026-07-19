@@ -4,6 +4,7 @@ import type {
   RateMetric,
   TeamTendencies,
 } from '@/lib/analytics/aggregateTeamTendencies'
+import { normalizeTeamName } from '@/lib/teamUtils'
 
 interface TendencyMatrixProps {
   teamName: string
@@ -67,6 +68,7 @@ function EmptyState() {
 }
 
 export function TendencyMatrix({ teamName, tendencies }: TendencyMatrixProps) {
+  const displayTeamName = normalizeTeamName(teamName)
   const economyTiers = TIER_ORDER.filter(tier => tendencies.economy.byTier[tier])
   const extraEconomyTiers = Object.keys(tendencies.economy.byTier)
     .filter(tier => !TIER_ORDER.includes(tier))
@@ -80,7 +82,7 @@ export function TendencyMatrix({ teamName, tendencies }: TendencyMatrixProps) {
     <section aria-labelledby="tendency-matrix-title" className="space-y-4">
       <div>
         <h2 id="tendency-matrix-title" className="text-2xl font-semibold text-white">
-          {teamName} Tendency Matrix
+          {displayTeamName} Tendency Matrix
         </h2>
         <p className="text-sm text-gray-400 mt-1">
           All 2024–25 archive data • {tendencies.seriesCount} series analyzed

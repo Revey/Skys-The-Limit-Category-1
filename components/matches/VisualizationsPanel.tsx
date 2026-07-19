@@ -65,9 +65,9 @@ export function VisualizationsPanel({
   }, [matchId, teamId])
 
   const teamNames = useMemo(() => {
-    if (!evidence) return { team: teamName, opponent: 'Opponent', opponentId: '' }
+    if (!evidence) return { team: normalizeTeamName(teamName), opponent: 'Opponent', opponentId: '' }
 
-    const names: Record<string, string> = { [teamId]: teamName }
+    const names: Record<string, string> = { [teamId]: normalizeTeamName(teamName) }
     const addTeamName = (candidateTeamId?: string, candidateTeamName?: string) => {
       if (candidateTeamId && candidateTeamName) {
         names[candidateTeamId] = normalizeTeamName(candidateTeamName)
@@ -80,7 +80,7 @@ export function VisualizationsPanel({
 
     const opponentId = Object.keys(names).find(id => id !== teamId) || ''
     return {
-      team: names[teamId] || teamName,
+      team: names[teamId] || normalizeTeamName(teamName),
       opponent: opponentId ? names[opponentId] : 'Opponent',
       opponentId,
     }

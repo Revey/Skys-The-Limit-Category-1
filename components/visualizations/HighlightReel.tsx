@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, Play, Star, Target, Trophy, Zap } from 'lucide-react'
 import type { Highlight } from '@/lib/analytics/computeHighlights'
+import { normalizeTeamName } from '@/lib/teamUtils'
 
 interface HighlightReelProps {
   highlights: Highlight[]
@@ -60,9 +61,9 @@ export default function HighlightReel({
   const currentIndex = Math.min(selectedIndex, highlights.length - 1)
   const currentHighlight = highlights[currentIndex]
   const meta = HIGHLIGHT_META[currentHighlight.type]
-  const attributedTeamName = currentHighlight.teamName || (
+  const attributedTeamName = normalizeTeamName(currentHighlight.teamName || (
     currentHighlight.isFocusTeam ? focusTeamName : opponentName
-  )
+  ))
 
   const goToPrevious = () => {
     setSelectedIndex(previous => previous > 0 ? previous - 1 : highlights.length - 1)

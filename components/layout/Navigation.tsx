@@ -12,6 +12,7 @@ export function Navigation() {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/review', label: 'Review' },
     { href: '/matches', label: 'Opponents' },
     { href: '/about', label: 'About' },
   ]

@@ -4,6 +4,7 @@ import type {
   GameInfo,
   MultiKillRound,
 } from '@/lib/types/evidence'
+import { normalizeTeamName } from '@/lib/teamUtils'
 
 export interface Highlight {
   gameId: string
@@ -83,7 +84,7 @@ export function computeHighlights(
       playerId: multiKill.playerId,
       playerName,
       label: `${playerName} ${multiKillLabel(multiKill.kills)}`,
-      teamName: multiKill.teamName,
+      teamName: normalizeTeamName(multiKill.teamName),
       mapName: gameById.get(multiKill.gameId)?.mapName,
       isFocusTeam: multiKill.teamId === focusTeamId,
     })
@@ -109,13 +110,14 @@ export function computeHighlights(
 
       if (!isLowEconomy || economyRound.roundWon !== true || !facedFullBuy) continue
 
+      const teamName = normalizeTeamName(economyRound.teamName)
       highlights.push({
         gameId: economyRound.gameId,
         roundNumber: economyRound.roundNumber,
         type: 'eco_upset',
         teamId: economyRound.teamId,
-        teamName: economyRound.teamName,
-        label: `${economyRound.teamName} won eco vs full buy`,
+        teamName,
+        label: `${teamName} won eco vs full buy`,
         mapName: gameById.get(economyRound.gameId)?.mapName,
         isFocusTeam: economyRound.teamId === focusTeamId,
       })

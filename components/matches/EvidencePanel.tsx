@@ -85,7 +85,9 @@ export function EvidencePanel({
   // Build team ID to name mapping from evidence data
   // IMPORTANT: Apply normalizeTeamName to remove any "(1)" suffixes
   const teamMap = useMemo(() => {
-    const map: Record<string, string> = { [focusTeamId]: focusTeamName }
+    const map: Record<string, string> = {
+      [focusTeamId]: normalizeTeamName(focusTeamName),
+    }
 
     if (!data?.evidence) return map
 
@@ -748,7 +750,7 @@ export function EvidencePanel({
                   {Object.entries(teamGroups).map(([teamId, picks]) => (
                     <div key={teamId} className="bg-black/30 rounded-lg p-4 border border-gray-800">
                       <div className={`text-sm font-semibold mb-3 ${teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
-                        {getTeamName(teamId)}
+                        {normalizeTeamName(getTeamName(teamId))}
                       </div>
                       <div className="space-y-2">
                         {picks.map((pick) => (
@@ -794,7 +796,7 @@ export function EvidencePanel({
                 {filteredStats.firstBloodStats.map((stat) => (
                   <tr key={stat.teamId} className="border-b border-gray-800/50 hover:bg-black/20">
                     <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
-                      {stat.teamName}
+                      {normalizeTeamName(stat.teamName)}
                     </td>
                     <td className="py-4 px-6 text-center text-[#00aeef] font-semibold">{stat.firstBloods}</td>
                     <td className="py-4 px-6 text-center text-green-400">{stat.roundsWon}</td>
@@ -831,7 +833,7 @@ export function EvidencePanel({
                 {filteredStats.plantStats.map((stat) => (
                   <tr key={stat.teamId} className="border-b border-gray-800/50 hover:bg-black/20">
                     <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
-                      {stat.teamName}
+                      {normalizeTeamName(stat.teamName)}
                     </td>
                     <td className="py-4 px-6 text-center text-[#00aeef] font-semibold">{stat.plants}</td>
                     <td className="py-4 px-6 text-center text-green-400">{stat.postPlantWins}</td>

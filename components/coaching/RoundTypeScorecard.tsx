@@ -1,4 +1,5 @@
 import type { RateMetric, TeamTendencies } from '@/lib/analytics/aggregateTeamTendencies'
+import { normalizeTeamName } from '@/lib/teamUtils'
 
 interface RoundTypeScorecardProps {
   teamName: string
@@ -22,6 +23,7 @@ function ScoreTile({ title, metric }: { title: string; metric: RateMetric }) {
 }
 
 export function RoundTypeScorecard({ teamName, tendencies }: RoundTypeScorecardProps) {
+  const displayTeamName = normalizeTeamName(teamName)
   const fullBuy = tendencies.economy.byTier.full_buy?.winRate ?? {
     numerator: 0,
     denominator: 0,
@@ -45,7 +47,7 @@ export function RoundTypeScorecard({ teamName, tendencies }: RoundTypeScorecardP
           Round-Type Scorecard
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          {teamName} • All 2024–25 archive data • {tendencies.seriesCount} series
+          {displayTeamName} • All 2024–25 archive data • {tendencies.seriesCount} series
         </p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

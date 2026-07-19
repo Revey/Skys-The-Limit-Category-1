@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Sparkles, AlertCircle } from 'lucide-react'
+import { normalizeTeamName } from '@/lib/teamUtils'
 
 interface CoachPanelProps {
   matchId: string
@@ -229,6 +230,7 @@ export function CoachPanel({
   teamId,
   teamName,
 }: CoachPanelProps) {
+  const displayTeamName = normalizeTeamName(teamName)
   const [loading, setLoading] = useState(false)
   const [fetchingGames, setFetchingGames] = useState(true)
   const [games, setGames] = useState<GameInfo[]>([])
@@ -317,7 +319,7 @@ export function CoachPanel({
           <div>
             <h2 className="text-xl font-semibold text-white">AI Coaching Report</h2>
             <p className="text-sm text-gray-400">
-              Generate {teamName} insights for <span className="text-purple-400 capitalize">{selectedGame?.mapName || 'selected map'}</span>
+              Generate {displayTeamName} insights for <span className="text-purple-400 capitalize">{selectedGame?.mapName || 'selected map'}</span>
             </p>
           </div>
         </div>
