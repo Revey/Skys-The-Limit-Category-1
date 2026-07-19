@@ -45,6 +45,12 @@ export default function PlayerComparisonCard({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
+        {player.adr !== undefined && (
+          <StatTile label="ADR" value={player.adr.toFixed(1)} />
+        )}
+        {player.damagePerKill !== undefined && (
+          <StatTile label="Dmg/Kill" value={player.damagePerKill.toFixed(1)} />
+        )}
         {player.firstBloods !== undefined && (
           <StatTile label="First Bloods" value={player.firstBloods} />
         )}

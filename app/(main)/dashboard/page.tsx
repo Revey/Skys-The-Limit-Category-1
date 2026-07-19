@@ -6,6 +6,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
 import { cookies } from 'next/headers'
+import { aggregateTeamTendencies } from '@/lib/analytics/aggregateTeamTendencies'
+import { getTeamSeriesDerived } from '@/lib/analytics/getTeamSeriesDerived'
+import { RoundTypeScorecard } from '@/components/coaching/RoundTypeScorecard'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,6 +50,7 @@ export default async function DashboardPage() {
   console.log('[DASHBOARD] DB connection completed in', Date.now() - startTime, 'ms')
 
   const focusTeam = getFocusTeam(await cookies())
+  const tendencySeriesPromise = getTeamSeriesDerived(focusTeam.teamId)
 
   // Prefer team-scoped stats, with a backward-compatible fallback for the legacy default document.
   let dashboardStatsDoc = await DashboardStatsModel.findOne({ teamId: focusTeam.teamId }).lean() as DashboardStatsDocument | null
@@ -56,6 +60,11 @@ export default async function DashboardPage() {
       teamId: { $exists: false },
     }).lean() as DashboardStatsDocument | null
   }
+
+  const teamTendencies = aggregateTeamTendencies(
+    await tendencySeriesPromise,
+    focusTeam.teamId
+  )
 
   console.log('[DASHBOARD] Stats fetch completed in', Date.now() - startTime, 'ms')
 
@@ -70,8 +79,8 @@ export default async function DashboardPage() {
             className="object-cover opacity-5"
           />
         </div>
-        <div className="max-w-3xl mx-auto">
-          <div className="card p-10 text-center animate-fade-in-up">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="card p-10 text-center animate-fade-in-up max-w-3xl mx-auto">
             <h1 className="text-3xl font-bold text-white mb-3">
               No dashboard stats for <span className="text-[#00aeef]">{focusTeam.teamName}</span>
             </h1>
@@ -80,6 +89,12 @@ export default async function DashboardPage() {
             </p>
             <RefreshStatsButton teamId={focusTeam.teamId} />
           </div>
+          {teamTendencies.seriesCount > 0 && (
+            <RoundTypeScorecard
+              teamName={focusTeam.teamName}
+              tendencies={teamTendencies}
+            />
+          )}
         </div>
       </div>
     )
@@ -129,6 +144,11 @@ export default async function DashboardPage() {
           <StatCard title="Series Losses" value={stats.seriesLosses} color="red" delay={200} />
           <StatCard title="Win Rate" value={`${winRate}%`} color="cyan" delay={300} />
         </div>
+
+        <RoundTypeScorecard
+          teamName={focusTeam.teamName}
+          tendencies={teamTendencies}
+        />
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

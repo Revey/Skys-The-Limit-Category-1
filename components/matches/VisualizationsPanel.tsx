@@ -10,7 +10,10 @@ import PlayerComparisonCard from '@/components/visualizations/PlayerComparisonCa
 import RoundTimeline from '@/components/visualizations/RoundTimeline'
 import WinProbabilityTimeline from '@/components/visualizations/WinProbabilityTimeline'
 import { computeHighlights } from '@/lib/analytics/computeHighlights'
-import { computePlayerCards } from '@/lib/analytics/computePlayerCards'
+import {
+  computePlayerCards,
+  type PlayerCardEvidenceV2,
+} from '@/lib/analytics/computePlayerCards'
 import { normalizeTeamName } from '@/lib/teamUtils'
 import type { EvidenceV1 } from '@/lib/types/evidence'
 
@@ -30,6 +33,7 @@ export function VisualizationsPanel({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [evidence, setEvidence] = useState<EvidenceV1 | null>(null)
+  const [evidenceV2, setEvidenceV2] = useState<PlayerCardEvidenceV2 | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
@@ -47,6 +51,7 @@ export function VisualizationsPanel({
 
         const data = await response.json()
         setEvidence(data.evidence as EvidenceV1)
+        setEvidenceV2((data.evidenceV2 as PlayerCardEvidenceV2 | null) ?? null)
         setError(null)
       } catch (fetchError) {
         console.error('Error fetching evidence:', fetchError)
@@ -115,8 +120,10 @@ export function VisualizationsPanel({
     [highlights, selectedGameId]
   )
   const playerCards = useMemo(
-    () => evidence ? computePlayerCards(evidence, { focusTeamId: teamId, selectedGameId }) : [],
-    [evidence, teamId, selectedGameId]
+    () => evidence
+      ? computePlayerCards(evidence, { focusTeamId: teamId, selectedGameId }, evidenceV2)
+      : [],
+    [evidence, evidenceV2, teamId, selectedGameId]
   )
 
   const roundTimelineData = useMemo(() => {

@@ -62,6 +62,9 @@ export async function GET(req: NextRequest) {
     }
 
     const teamContext = getTeamContext(match.analytics?.evidence_v1, teamId)
+    const analyticsWithEvidenceV2 = match.analytics as (MatchDocument['analytics'] & {
+      evidence_v2?: unknown
+    }) | undefined
 
     // Build response with evidence
     const response = {
@@ -76,6 +79,7 @@ export async function GET(req: NextRequest) {
         games: match.analytics?.evidence_v1?.games || [],
       },
       evidence: match.analytics?.evidence_v1 || null,
+      evidenceV2: analyticsWithEvidenceV2?.evidence_v2 ?? null,
       evidenceMeta: match.analytics?.evidence_v1_meta || null,
     }
 

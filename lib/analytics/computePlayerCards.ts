@@ -19,6 +19,18 @@ export interface PlayerCardStat {
   clutchWins?: number
   clutchAttempts?: number
   multiKillCount?: number
+  adr?: number
+  damagePerKill?: number
+}
+
+export interface PlayerDamageEvidence {
+  playerId: string
+  adr?: number | null
+  damagePerKill?: number | null
+}
+
+export interface PlayerCardEvidenceV2 {
+  playerDamage?: PlayerDamageEvidence[]
 }
 
 export interface PlayerCardEvidence {
@@ -42,7 +54,8 @@ function numeric(value: unknown): value is number {
 
 export function computePlayerCards(
   evidence: PlayerCardEvidence,
-  options: ComputePlayerCardsOptions
+  options: ComputePlayerCardsOptions,
+  evidenceV2?: PlayerCardEvidenceV2 | null
 ): PlayerCardStat[] {
   const players = evidence.players || []
   const selectedGameId = options.selectedGameId
@@ -55,6 +68,9 @@ export function computePlayerCards(
   const selectedMultiKillRounds = selectedGameId
     ? (evidence.derived?.multiKillRounds || []).filter(round => round.gameId === selectedGameId)
     : []
+  const damageByPlayer = new Map(
+    (evidenceV2?.playerDamage || []).map(damage => [damage.playerId, damage])
+  )
 
   const activePlayerIds = new Set<string>()
   if (selectedGameId) {
@@ -123,6 +139,10 @@ export function computePlayerCards(
         )
         card.multiKillCount = multiKillStat?.totalMultiKills || 0
       }
+
+      const damage = damageByPlayer.get(player.playerId)
+      if (numeric(damage?.adr)) card.adr = damage.adr
+      if (numeric(damage?.damagePerKill)) card.damagePerKill = damage.damagePerKill
 
       return card
     })

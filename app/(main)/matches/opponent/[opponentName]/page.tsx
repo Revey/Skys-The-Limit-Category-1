@@ -6,6 +6,9 @@ import { TeamLogo } from '@/components/ui/TeamLogo'
 import { normalizeTeamName } from '@/lib/teamUtils'
 import { getMapsStats } from '@/lib/types/evidence'
 import { getFocusTeam } from '@/lib/focusTeam'
+import { aggregateTeamTendencies } from '@/lib/analytics/aggregateTeamTendencies'
+import { getTeamSeriesDerived } from '@/lib/analytics/getTeamSeriesDerived'
+import { TendencyMatrix } from '@/components/coaching/TendencyMatrix'
 import { ChevronLeft, TrendingUp, TrendingDown, Calendar, Trophy } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -114,6 +117,25 @@ export default async function OpponentDetailPage({ params }: Props) {
     },
     { $sort: { _id: -1 } }
   ])) as unknown as MatchDocument[]
+
+  let opponentTeamId = ''
+  for (const match of matches) {
+    const mapsStats = getMapsStats(match.analytics?.evidence_v1)
+    const matchingTeam = mapsStats.find(stat =>
+      stat.teamName && normalizeTeamName(stat.teamName) === normalizedSearchName
+    )
+    if (matchingTeam) {
+      opponentTeamId = matchingTeam.teamId
+      break
+    }
+  }
+
+  const opponentTendencies = opponentTeamId
+    ? aggregateTeamTendencies(
+      await getTeamSeriesDerived(opponentTeamId),
+      opponentTeamId
+    )
+    : null
 
   const seriesMap = new Map<string, SeriesData>()
 
@@ -244,6 +266,13 @@ export default async function OpponentDetailPage({ params }: Props) {
             <p className={`text-3xl font-bold ${parseInt(winRate) >= 50 ? 'text-green-400' : 'text-red-400'}`}>{winRate}%</p>
           </div>
         </div>
+
+        {opponentTendencies && (
+          <TendencyMatrix
+            teamName={normalizedSearchName}
+            tendencies={opponentTendencies}
+          />
+        )}
 
         {/* Series List */}
         {series.length === 0 ? (
