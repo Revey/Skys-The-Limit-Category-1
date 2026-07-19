@@ -280,7 +280,10 @@ export default async function OpponentDetailPage({ params }: Props) {
               pistolPercentile={leagueBenchmarks?.percentileFor(opponentTeamId, 'pistolWR') ?? null}
               antiEcoPercentile={leagueBenchmarks?.percentileFor(opponentTeamId, 'antiEcoWR') ?? null}
             />
-            <ScoutReportPanel opponentTeamId={opponentTeamId} />
+            <ScoutReportPanel
+              opponentTeamId={opponentTeamId}
+              opponentTeamName={normalizedSearchName}
+            />
           </>
         )}
 

@@ -269,14 +269,14 @@ export default function KillHeatmap({
   }
 
   return (
-    <div className="bg-gray-900/50 rounded-xl border border-gray-700 p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="min-w-0 max-w-full bg-gray-900/50 rounded-xl border border-gray-700 p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-white">
           Kill Heatmap - {mapName}
         </h3>
 
         {/* View mode selector */}
-        <div className="flex gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2">
           {(['all', 'kills', 'deaths', 'firstbloods'] as ViewMode[]).map(mode => (
             <button
               key={mode}
@@ -342,7 +342,7 @@ export default function KillHeatmap({
       </div>
 
       {/* Round filter */}
-      <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
+      <div className="flex flex-wrap gap-1 mb-4 pb-2">
         <button
           onClick={() => {
             setSelectedRound(null)
@@ -534,7 +534,7 @@ export default function KillHeatmap({
       </div>
 
       {/* Legend */}
-      <div className="flex justify-center gap-6 mt-4 text-sm text-gray-300">
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 text-sm text-gray-300">
         <span className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-red-500"></span>
           {teamName} Deaths

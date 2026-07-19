@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { Check, Copy, Loader2 } from 'lucide-react'
+import { getClientFocusTeam } from '@/lib/focusTeam'
 
 interface ScoutReportPanelProps {
   opponentTeamId: string
+  opponentTeamName: string
 }
 
 interface ScoutReportResponse {
@@ -42,7 +44,7 @@ function ReportText({ report }: { report: string }) {
   )
 }
 
-export function ScoutReportPanel({ opponentTeamId }: ScoutReportPanelProps) {
+export function ScoutReportPanel({ opponentTeamId, opponentTeamName }: ScoutReportPanelProps) {
   const [result, setResult] = useState<ScoutReportResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -54,10 +56,16 @@ export function ScoutReportPanel({ opponentTeamId }: ScoutReportPanelProps) {
     setCopied(false)
 
     try {
+      const focusTeam = getClientFocusTeam()
       const response = await fetch('/api/scout-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId: opponentTeamId }),
+        body: JSON.stringify({
+          teamId: opponentTeamId,
+          opponentTeamName,
+          focusTeamId: focusTeam.teamId,
+          focusTeamName: focusTeam.teamName,
+        }),
       })
       const data = await response.json() as Partial<ScoutReportResponse> & { message?: string }
 

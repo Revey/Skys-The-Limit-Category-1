@@ -112,15 +112,33 @@ export function ReviewQueue({ items }: ReviewQueueProps) {
                 <Link
                   key={`${item.matchId}-${item.gameId}-${item.roundNumber}`}
                   href={`/matches/${encodeURIComponent(item.matchId)}`}
-                  className="grid gap-3 border-b border-gray-800/80 p-4 transition-colors last:border-0 hover:bg-white/5 md:grid-cols-[110px_minmax(140px,0.8fr)_minmax(120px,0.7fr)_80px_minmax(240px,2fr)] md:items-center"
+                  className="block border-b border-gray-800/80 p-4 transition-colors last:border-0 hover:bg-white/5 sm:grid sm:gap-3 md:grid-cols-[110px_minmax(140px,0.8fr)_minmax(120px,0.7fr)_80px_minmax(240px,2fr)] md:items-center"
                 >
-                  <span className="text-sm text-gray-400">{formatDate(item.date)}</span>
-                  <span className="truncate font-medium text-white">
+                  <span className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:hidden">
+                    <span className="text-sm text-gray-400">{formatDate(item.date)}</span>
+                    <span className="truncate font-medium text-white">vs {item.opponentName}</span>
+                    <span className="capitalize text-gray-300">{item.mapName}</span>
+                  </span>
+                  <span className="mt-3 grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-2 sm:hidden">
+                    <span className="pt-1 font-mono text-xs text-gray-300">Round {item.roundNumber}</span>
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${SEVERITY_STYLES[severity]}`}>
+                      {BADGE_LABELS[item.category]}
+                    </span>
+                    <span className="min-w-0 text-sm text-gray-200">
+                      {item.reason}
+                      {item.detail !== item.reason && (
+                        <span className="mt-1 block text-xs text-gray-500">{item.detail}</span>
+                      )}
+                    </span>
+                  </span>
+
+                  <span className="hidden text-sm text-gray-400 sm:block">{formatDate(item.date)}</span>
+                  <span className="hidden truncate font-medium text-white sm:block">
                     vs {item.opponentName}
                   </span>
-                  <span className="capitalize text-gray-300">{item.mapName}</span>
-                  <span className="font-mono text-sm text-gray-300">Round {item.roundNumber}</span>
-                  <span className="min-w-0">
+                  <span className="hidden capitalize text-gray-300 sm:block">{item.mapName}</span>
+                  <span className="hidden font-mono text-sm text-gray-300 sm:block">Round {item.roundNumber}</span>
+                  <span className="hidden min-w-0 sm:block">
                     <span className={`mr-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${SEVERITY_STYLES[severity]}`}>
                       {BADGE_LABELS[item.category]}
                     </span>

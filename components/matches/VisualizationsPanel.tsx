@@ -221,14 +221,14 @@ export function VisualizationsPanel({
   const opponentPlayers = playerCards.filter(player => player.teamId !== teamId)
 
   return (
-    <div className="card backdrop-blur-xl bg-gray-900/70 p-6">
+    <div className="card min-w-0 backdrop-blur-xl bg-gray-900/70 p-4 md:p-6">
       <div className="flex items-center gap-3 mb-6">
         <BarChart3 className="w-6 h-6 text-blue-400" />
         <h2 className="text-xl font-semibold text-white">Match Visualizations</h2>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-gray-800/50 border border-gray-700 mb-4">
+        <TabsList className="flex-wrap bg-gray-800/50 border border-gray-700 mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
           <TabsTrigger value="players">Players</TabsTrigger>

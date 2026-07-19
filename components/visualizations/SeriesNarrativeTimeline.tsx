@@ -115,7 +115,7 @@ export default function SeriesNarrativeTimeline({
   }
 
   return (
-    <div className="bg-gray-900/50 rounded-xl border border-gray-700 p-6">
+    <div className="min-w-0 bg-gray-900/50 rounded-xl border border-gray-700 p-4 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <h3 className="text-lg font-semibold text-white">Series Narrative</h3>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300">
@@ -128,13 +128,13 @@ export default function SeriesNarrativeTimeline({
       <div className="space-y-5">
         {gameRows.map(game => {
           const roundNumbers = new Set(game.rounds.map(round => round.roundNumber))
-          const gridTemplateColumns = `repeat(${game.rounds.length}, minmax(32px, 1fr))`
+          const gridTemplateColumns = `repeat(${game.rounds.length}, minmax(40px, 1fr))`
 
           return (
             <section key={game.gameId} aria-label={`${game.mapName} round narrative`}>
               <p className="mb-2 text-sm font-medium text-gray-200">{game.mapName}</p>
-              <div className="overflow-x-auto pb-1">
-                <div className="min-w-max">
+              <div className="max-w-full overflow-x-auto pb-1">
+                <div className="min-w-full" style={{ width: `${game.rounds.length * 44}px` }}>
                   <div className="grid gap-1" style={{ gridTemplateColumns }}>
                     {game.rounds.map(round => {
                       const markerLabels = [
