@@ -8,6 +8,7 @@ import HighlightReel from '@/components/visualizations/HighlightReel'
 import KillHeatmap from '@/components/visualizations/KillHeatmap'
 import PlayerComparisonCard from '@/components/visualizations/PlayerComparisonCard'
 import RoundTimeline from '@/components/visualizations/RoundTimeline'
+import SeriesNarrativeTimeline from '@/components/visualizations/SeriesNarrativeTimeline'
 import WinProbabilityTimeline from '@/components/visualizations/WinProbabilityTimeline'
 import { computeHighlights } from '@/lib/analytics/computeHighlights'
 import {
@@ -244,6 +245,16 @@ export function VisualizationsPanel({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          <SeriesNarrativeTimeline
+            rounds={filteredData.rounds}
+            games={filteredData.games}
+            teamId={teamId}
+            teamName={teamNames.team}
+            opponentName={teamNames.opponent}
+            highlights={filteredHighlights}
+            manAdvantageStats={evidence.derived?.manAdvantageStats}
+          />
+
           <WinProbabilityTimeline
             rounds={filteredData.rounds.map(round => {
               const clutch = evidence.clutchSituations?.find(situation =>
