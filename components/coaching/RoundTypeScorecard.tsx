@@ -1,14 +1,27 @@
 import type { RateMetric, TeamTendencies } from '@/lib/analytics/aggregateTeamTendencies'
+import type { MetricKey, PercentileResult } from '@/lib/analytics/leagueBenchmarks'
 import { normalizeTeamName } from '@/lib/teamUtils'
+import { PercentileChip } from '@/components/coaching/PercentileChip'
+
+export type ScorecardPercentiles = Partial<Record<MetricKey, PercentileResult | null>>
 
 interface RoundTypeScorecardProps {
   teamName: string
   tendencies: TeamTendencies
+  percentiles?: ScorecardPercentiles
 }
 
 const LOW_SAMPLE_THRESHOLD = 8
 
-function ScoreTile({ title, metric }: { title: string; metric: RateMetric }) {
+function ScoreTile({
+  title,
+  metric,
+  percentile,
+}: {
+  title: string
+  metric: RateMetric
+  percentile?: PercentileResult | null
+}) {
   const lowSample = metric.denominator < LOW_SAMPLE_THRESHOLD
   return (
     <div className={`rounded-xl border border-gray-800 bg-black/20 p-4 ${lowSample ? 'opacity-50' : ''}`}>
@@ -18,12 +31,18 @@ function ScoreTile({ title, metric }: { title: string; metric: RateMetric }) {
         n={metric.denominator}
         {lowSample && <span className="ml-1 uppercase tracking-wide">• low sample</span>}
       </p>
+      {percentile !== undefined && (
+        <div className="mt-2">
+          <PercentileChip result={percentile} />
+        </div>
+      )}
     </div>
   )
 }
 
-export function RoundTypeScorecard({ teamName, tendencies }: RoundTypeScorecardProps) {
+export function RoundTypeScorecard({ teamName, tendencies, percentiles }: RoundTypeScorecardProps) {
   const displayTeamName = normalizeTeamName(teamName)
+  const p = (key: MetricKey) => percentiles?.[key]
   const fullBuy = tendencies.economy.byTier.full_buy?.winRate ?? {
     numerator: 0,
     denominator: 0,
@@ -51,14 +70,14 @@ export function RoundTypeScorecard({ teamName, tendencies }: RoundTypeScorecardP
         </p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <ScoreTile title="Pistol WR" metric={tendencies.pistols.overall} />
-        <ScoreTile title="Bonus Conversion" metric={tendencies.pistols.bonusConversion} />
-        <ScoreTile title="Anti-Eco WR" metric={tendencies.antiEco.winRate} />
-        <ScoreTile title="Eco / Upset WR" metric={tendencies.economy.ecoUpsetWinRate} />
-        <ScoreTile title="Full-Buy WR" metric={fullBuy} />
-        <ScoreTile title="After-Loss Force" metric={tendencies.economy.afterLossForceRate} />
-        <ScoreTile title="Fast Tempo WR" metric={fast} />
-        <ScoreTile title="Slow Tempo WR" metric={slow} />
+        <ScoreTile title="Pistol WR" metric={tendencies.pistols.overall} percentile={p('pistolWR')} />
+        <ScoreTile title="Bonus Conversion" metric={tendencies.pistols.bonusConversion} percentile={p('bonusConversion')} />
+        <ScoreTile title="Anti-Eco WR" metric={tendencies.antiEco.winRate} percentile={p('antiEcoWR')} />
+        <ScoreTile title="Eco / Upset WR" metric={tendencies.economy.ecoUpsetWinRate} percentile={p('ecoUpsetWR')} />
+        <ScoreTile title="Full-Buy WR" metric={fullBuy} percentile={p('fullBuyWR')} />
+        <ScoreTile title="After-Loss Force" metric={tendencies.economy.afterLossForceRate} percentile={p('afterLossForceRate')} />
+        <ScoreTile title="Fast Tempo WR" metric={fast} percentile={p('fastTempoWR')} />
+        <ScoreTile title="Slow Tempo WR" metric={slow} percentile={p('slowTempoWR')} />
       </div>
     </section>
   )

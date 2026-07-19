@@ -8,7 +8,8 @@ import { ChevronRight } from 'lucide-react'
 import { cookies } from 'next/headers'
 import { aggregateTeamTendencies } from '@/lib/analytics/aggregateTeamTendencies'
 import { getTeamSeriesDerived } from '@/lib/analytics/getTeamSeriesDerived'
-import { RoundTypeScorecard } from '@/components/coaching/RoundTypeScorecard'
+import { RoundTypeScorecard, type ScorecardPercentiles } from '@/components/coaching/RoundTypeScorecard'
+import { getLeagueBenchmarks, type MetricKey } from '@/lib/analytics/leagueBenchmarks'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,9 +62,14 @@ export default async function DashboardPage() {
     }).lean() as DashboardStatsDocument | null
   }
 
+  const leagueBenchmarks = await getLeagueBenchmarks().catch(() => null)
   const teamTendencies = aggregateTeamTendencies(
     await tendencySeriesPromise,
     focusTeam.teamId
+  )
+  const scorecardMetricKeys: MetricKey[] = ['pistolWR','bonusConversion','antiEcoWR','ecoUpsetWR','fullBuyWR','afterLossForceRate','fastTempoWR','slowTempoWR']
+  const scorecardPercentiles: ScorecardPercentiles = Object.fromEntries(
+    scorecardMetricKeys.map((k) => [k, leagueBenchmarks?.percentileFor(focusTeam.teamId, k) ?? null])
   )
 
   console.log('[DASHBOARD] Stats fetch completed in', Date.now() - startTime, 'ms')
@@ -93,6 +99,7 @@ export default async function DashboardPage() {
             <RoundTypeScorecard
               teamName={focusTeam.teamName}
               tendencies={teamTendencies}
+              percentiles={scorecardPercentiles}
             />
           )}
         </div>
@@ -148,6 +155,7 @@ export default async function DashboardPage() {
         <RoundTypeScorecard
           teamName={focusTeam.teamName}
           tendencies={teamTendencies}
+          percentiles={scorecardPercentiles}
         />
 
         {/* Two Column Layout */}

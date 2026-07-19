@@ -5,10 +5,14 @@ import type {
   TeamTendencies,
 } from '@/lib/analytics/aggregateTeamTendencies'
 import { normalizeTeamName } from '@/lib/teamUtils'
+import type { PercentileResult } from '@/lib/analytics/leagueBenchmarks'
+import { PercentileChip } from '@/components/coaching/PercentileChip'
 
 interface TendencyMatrixProps {
   teamName: string
   tendencies: TeamTendencies
+  pistolPercentile?: PercentileResult | null
+  antiEcoPercentile?: PercentileResult | null
 }
 
 const LOW_SAMPLE_THRESHOLD = 8
@@ -67,7 +71,7 @@ function EmptyState() {
   return <p className="text-sm text-gray-500 italic">No derived archive data available.</p>
 }
 
-export function TendencyMatrix({ teamName, tendencies }: TendencyMatrixProps) {
+export function TendencyMatrix({ teamName, tendencies, pistolPercentile, antiEcoPercentile }: TendencyMatrixProps) {
   const displayTeamName = normalizeTeamName(teamName)
   const economyTiers = TIER_ORDER.filter(tier => tendencies.economy.byTier[tier])
   const extraEconomyTiers = Object.keys(tendencies.economy.byTier)
@@ -117,7 +121,12 @@ export function TendencyMatrix({ teamName, tendencies }: TendencyMatrixProps) {
         <MatrixCard title="Pistols & Bonus">
           {tendencies.pistols.overall.denominator === 0 ? <EmptyState /> : (
             <>
-              <MetricRow name="Pistol WR"><RateValue metric={tendencies.pistols.overall} /></MetricRow>
+              <MetricRow name="Pistol WR">
+                <span className="flex items-center gap-2">
+                  <PercentileChip result={pistolPercentile ?? null} />
+                  <RateValue metric={tendencies.pistols.overall} />
+                </span>
+              </MetricRow>
               <MetricRow name="Attack pistol WR"><RateValue metric={tendencies.pistols.attack} /></MetricRow>
               <MetricRow name="Defense pistol WR"><RateValue metric={tendencies.pistols.defense} /></MetricRow>
               <MetricRow name="Bonus conversion"><RateValue metric={tendencies.pistols.bonusConversion} /></MetricRow>
@@ -251,7 +260,12 @@ export function TendencyMatrix({ teamName, tendencies }: TendencyMatrixProps) {
         <MatrixCard title="Anti-Eco">
           {tendencies.antiEco.winRate.denominator === 0 ? <EmptyState /> : (
             <>
-              <MetricRow name="Anti-eco WR"><RateValue metric={tendencies.antiEco.winRate} /></MetricRow>
+              <MetricRow name="Anti-eco WR">
+                <span className="flex items-center gap-2">
+                  <PercentileChip result={antiEcoPercentile ?? null} />
+                  <RateValue metric={tendencies.antiEco.winRate} />
+                </span>
+              </MetricRow>
               <MetricRow name="Deaths to eco">{tendencies.antiEco.deathsToEco}</MetricRow>
               <MetricRow name="Deaths to force">{tendencies.antiEco.deathsToForce}</MetricRow>
               {tendencies.antiEco.problematicWeapons.length > 0 && (

@@ -9,6 +9,7 @@ import { getFocusTeam } from '@/lib/focusTeam'
 import { aggregateTeamTendencies } from '@/lib/analytics/aggregateTeamTendencies'
 import { getTeamSeriesDerived } from '@/lib/analytics/getTeamSeriesDerived'
 import { TendencyMatrix } from '@/components/coaching/TendencyMatrix'
+import { getLeagueBenchmarks } from '@/lib/analytics/leagueBenchmarks'
 import { ChevronLeft, TrendingUp, TrendingDown, Calendar, Trophy } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -130,6 +131,9 @@ export default async function OpponentDetailPage({ params }: Props) {
     }
   }
 
+  const leagueBenchmarks = opponentTeamId
+    ? await getLeagueBenchmarks().catch(() => null)
+    : null
   const opponentTendencies = opponentTeamId
     ? aggregateTeamTendencies(
       await getTeamSeriesDerived(opponentTeamId),
@@ -271,6 +275,8 @@ export default async function OpponentDetailPage({ params }: Props) {
           <TendencyMatrix
             teamName={normalizedSearchName}
             tendencies={opponentTendencies}
+            pistolPercentile={leagueBenchmarks?.percentileFor(opponentTeamId, 'pistolWR') ?? null}
+            antiEcoPercentile={leagueBenchmarks?.percentileFor(opponentTeamId, 'antiEcoWR') ?? null}
           />
         )}
 
