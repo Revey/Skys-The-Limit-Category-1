@@ -21,6 +21,16 @@ interface KillEvent {
 
 interface KillHeatmapProps {
   kills: KillEvent[]
+  rounds?: Array<{
+    gameId: string
+    roundNumber: number
+    hadPlant: boolean
+  }>
+  plants?: Array<{
+    gameId: string
+    roundNumber: number
+    timestamp: string
+  }>
   mapName: string
   teamId: string
   teamName: string
@@ -54,6 +64,8 @@ function worldToMinimap(
 
 export default function KillHeatmap({
   kills,
+  rounds: roundEvidence = [],
+  plants = [],
   mapName,
   teamId,
   teamName,
@@ -63,30 +75,94 @@ export default function KillHeatmap({
 }: KillHeatmapProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('all')
   const [selectedRound, setSelectedRound] = useState<number | null>(null)
+  const [selectedWeapon, setSelectedWeapon] = useState('all')
+  const [postPlantOnly, setPostPlantOnly] = useState(false)
+  const [showEngagementLines, setShowEngagementLines] = useState(false)
   const [hoveredKill, setHoveredKill] = useState<KillEvent | null>(null)
   const mapSettings = MAP_SETTINGS[mapName.toLowerCase()]
 
-  // Filter and process kills based on view mode
-  const displayKills = useMemo(() => {
+  const plantContext = useMemo(() => {
+    const plantedRounds = new Set(
+      roundEvidence
+        .filter(round => round.hadPlant)
+        .map(round => `${round.gameId}:${round.roundNumber}`)
+    )
+    const plantTimes = new Map<string, number>()
+
+    plants.forEach(plant => {
+      const timestamp = Date.parse(plant.timestamp)
+      if (!Number.isFinite(timestamp)) return
+
+      const key = `${plant.gameId}:${plant.roundNumber}`
+      const currentTimestamp = plantTimes.get(key)
+      if (currentTimestamp === undefined || timestamp < currentTimestamp) {
+        plantTimes.set(key, timestamp)
+      }
+    })
+
+    return { plantedRounds, plantTimes }
+  }, [plants, roundEvidence])
+
+  // Apply every filter except weapon so the dropdown counts stay useful.
+  const weaponScopeKills = useMemo(() => {
     let filtered = [...kills]
 
-    // Filter by round if selected
     if (selectedRound !== null) {
       filtered = filtered.filter(k => k.roundNumber === selectedRound)
     }
 
-    // Filter by view mode
     switch (viewMode) {
       case 'kills':
-        return filtered.filter(k => k.killerTeamId === teamId)
+        filtered = filtered.filter(k => k.killerTeamId === teamId)
+        break
       case 'deaths':
-        return filtered.filter(k => k.victimTeamId === teamId)
+        filtered = filtered.filter(k => k.victimTeamId === teamId)
+        break
       case 'firstbloods':
-        return filtered.filter(k => k.isFirstBlood)
-      default:
-        return filtered
+        filtered = filtered.filter(k => k.isFirstBlood)
+        break
     }
-  }, [kills, viewMode, selectedRound, teamId])
+
+    if (postPlantOnly) {
+      filtered = filtered.filter(kill => {
+        const key = `${kill.gameId}:${kill.roundNumber}`
+        if (!plantContext.plantedRounds.has(key)) return false
+
+        const plantTime = plantContext.plantTimes.get(key)
+        // Older evidence may omit a plant timestamp. In that case, approximate
+        // post-plant activity by including every kill from rounds with hadPlant=true.
+        if (plantTime === undefined) return true
+
+        const killTime = Date.parse(kill.timestamp)
+        return Number.isFinite(killTime) && killTime > plantTime
+      })
+    }
+
+    return filtered
+  }, [kills, plantContext, postPlantOnly, selectedRound, teamId, viewMode])
+
+  const weaponOptions = useMemo(() => {
+    const counts = new Map<string, number>()
+    weaponScopeKills.forEach(kill => {
+      const weapon = kill.weapon?.trim()
+      if (weapon) counts.set(weapon, (counts.get(weapon) || 0) + 1)
+    })
+
+    return [...counts.entries()].sort(([weaponA], [weaponB]) =>
+      weaponA.localeCompare(weaponB)
+    )
+  }, [weaponScopeKills])
+
+  useEffect(() => {
+    if (selectedWeapon !== 'all' && !weaponOptions.some(([weapon]) => weapon === selectedWeapon)) {
+      setSelectedWeapon('all')
+    }
+  }, [selectedWeapon, weaponOptions])
+
+  const displayKills = useMemo(() => {
+    if (selectedWeapon === 'all') return weaponScopeKills
+    return weaponScopeKills.filter(kill => kill.weapon?.trim() === selectedWeapon)
+  }, [selectedWeapon, weaponScopeKills])
 
   const { positionedKills, droppedPointCount } = useMemo(() => {
     if (!mapSettings) {
@@ -96,13 +172,14 @@ export default function KillHeatmap({
     let droppedCount = 0
     const positioned = displayKills.flatMap((kill, index) => {
       const victimPosition = worldToMinimap(kill.victimPosition, mapSettings)
+      const killerPosition = worldToMinimap(kill.killerPosition, mapSettings)
 
       if (!victimPosition) {
         droppedCount += 1
         return []
       }
 
-      return [{ kill, victimPosition, index }]
+      return [{ kill, killerPosition, victimPosition, index }]
     })
 
     return { positionedKills: positioned, droppedPointCount: droppedCount }
@@ -115,6 +192,10 @@ export default function KillHeatmap({
       )
     }
   }, [droppedPointCount, mapName])
+
+  useEffect(() => {
+    setHoveredKill(null)
+  }, [postPlantOnly, selectedRound, selectedWeapon, viewMode])
 
   // Get unique rounds for filter
   const rounds = useMemo(() => {
@@ -215,10 +296,58 @@ export default function KillHeatmap({
         </div>
       </div>
 
+      {/* Tactical filters */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <label className="flex items-center gap-2 text-xs text-gray-300">
+          <span>Weapon</span>
+          <select
+            value={selectedWeapon}
+            onChange={event => setSelectedWeapon(event.target.value)}
+            className="rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-gray-200 outline-none focus:border-blue-500"
+          >
+            <option value="all">All ({weaponScopeKills.length})</option>
+            {weaponOptions.map(([weapon, count]) => (
+              <option key={weapon} value={weapon}>
+                {weapon} ({count})
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <button
+          type="button"
+          aria-pressed={showEngagementLines}
+          onClick={() => setShowEngagementLines(current => !current)}
+          className={`rounded px-3 py-1 text-xs transition-colors ${
+            showEngagementLines
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Engagement lines {showEngagementLines ? 'On' : 'Off'}
+        </button>
+
+        <button
+          type="button"
+          aria-pressed={postPlantOnly}
+          onClick={() => setPostPlantOnly(current => !current)}
+          className={`rounded px-3 py-1 text-xs transition-colors ${
+            postPlantOnly
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Post-plant only
+        </button>
+      </div>
+
       {/* Round filter */}
       <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
         <button
-          onClick={() => setSelectedRound(null)}
+          onClick={() => {
+            setSelectedRound(null)
+            setShowEngagementLines(false)
+          }}
           className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
             selectedRound === null
               ? 'bg-blue-600 text-white'
@@ -230,7 +359,10 @@ export default function KillHeatmap({
         {rounds.map(round => (
           <button
             key={round}
-            onClick={() => setSelectedRound(round)}
+            onClick={() => {
+              setSelectedRound(round)
+              setShowEngagementLines(true)
+            }}
             className={`px-2 py-1 rounded text-xs ${
               selectedRound === round
                 ? 'bg-blue-600 text-white'
@@ -272,8 +404,45 @@ export default function KillHeatmap({
             )}
           </div>
 
+          {/* Killer-to-victim engagement layer */}
+          {showEngagementLines && (
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              {positionedKills.map(({ kill, killerPosition, victimPosition, index }) => {
+                if (!killerPosition) return null
+
+                const color = kill.killerTeamId === teamId ? '#22c55e' : '#ef4444'
+                return (
+                  <g key={`${kill.gameId}-${kill.roundNumber}-${kill.timestamp}-${index}`}>
+                    <line
+                      x1={killerPosition.x}
+                      y1={killerPosition.y}
+                      x2={victimPosition.x}
+                      y2={victimPosition.y}
+                      stroke={color}
+                      strokeOpacity="0.4"
+                      strokeWidth="0.45"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    <circle
+                      cx={killerPosition.x}
+                      cy={killerPosition.y}
+                      r="0.65"
+                      fill={color}
+                      fillOpacity="0.4"
+                    />
+                  </g>
+                )
+              })}
+            </svg>
+          )}
+
           {/* Individual kill markers */}
-          {positionedKills.filter(({ index }) => index < 50).map(({ kill, victimPosition, index }) => {
+          {positionedKills.map(({ kill, victimPosition, index }) => {
             const isTeamDeath = kill.victimTeamId === teamId
 
             return (
@@ -384,26 +553,26 @@ export default function KillHeatmap({
       <div className="grid grid-cols-4 gap-4 mt-4 text-center">
         <div className="bg-gray-800/50 rounded p-2">
           <p className="text-2xl font-bold text-green-400">
-            {kills.filter(k => k.killerTeamId === teamId).length}
+            {displayKills.filter(k => k.killerTeamId === teamId).length}
           </p>
           <p className="text-xs text-gray-400">Kills</p>
         </div>
         <div className="bg-gray-800/50 rounded p-2">
           <p className="text-2xl font-bold text-red-400">
-            {kills.filter(k => k.victimTeamId === teamId).length}
+            {displayKills.filter(k => k.victimTeamId === teamId).length}
           </p>
           <p className="text-xs text-gray-400">Deaths</p>
         </div>
         <div className="bg-gray-800/50 rounded p-2">
           <p className="text-2xl font-bold text-yellow-400">
-            {kills.filter(k => k.isFirstBlood && k.killerTeamId === teamId).length}
+            {displayKills.filter(k => k.isFirstBlood && k.killerTeamId === teamId).length}
           </p>
           <p className="text-xs text-gray-400">First Bloods</p>
         </div>
         <div className="bg-gray-800/50 rounded p-2">
           <p className="text-2xl font-bold text-blue-400">
-            {(kills.filter(k => k.killerTeamId === teamId).length /
-              Math.max(kills.filter(k => k.victimTeamId === teamId).length, 1)).toFixed(2)}
+            {(displayKills.filter(k => k.killerTeamId === teamId).length /
+              Math.max(displayKills.filter(k => k.victimTeamId === teamId).length, 1)).toFixed(2)}
           </p>
           <p className="text-xs text-gray-400">K/D Ratio</p>
         </div>

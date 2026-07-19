@@ -289,6 +289,10 @@ export function VisualizationsPanel({
         <TabsContent value="heatmap">
           <KillHeatmap
             kills={heatmapKills}
+            rounds={filteredData.rounds}
+            plants={(evidence.plants || []).filter(
+              plant => !selectedGameId || plant.gameId === selectedGameId
+            )}
             mapName={currentMap}
             teamId={teamId}
             teamName={teamNames.team}
