@@ -32,7 +32,6 @@ interface SeriesData {
   seriesWon: boolean
   games: GameData[]
   playerStatsByGame: Record<string, any[]>
-  derivedStats: any
 }
 
 interface MatchDetailClientProps {

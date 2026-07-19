@@ -15,7 +15,7 @@ Auth
 Key structure
 - app/
   - layout.tsx, page.tsx, login/page.tsx, dashboard/page.tsx, matches/[matchId]/page.tsx
-  - api/health, api/auth, api/coach-report, api/matches, api/matches/[matchId]/analytics
+  - api/health, api/auth, api/coach/match, api/matches, api/refresh-stats
 - lib/db.ts, lib/auth.ts, lib/analytics/*
 - models/Team.ts, models/Match.ts
 - tailwind.config.ts, postcss.config.js, app/globals.css

@@ -21,7 +21,6 @@ export async function generateCoachReport(prompt: string): Promise<string> {
   const useMock = process.env.COACH_MOCK === 'true'
 
   if (useMock) {
-    console.log('[LLM] Using mock response (COACH_MOCK=true)')
     return getMockResponse()
   }
 
@@ -32,9 +31,6 @@ export async function generateCoachReport(prompt: string): Promise<string> {
   }
 
   try {
-    console.log(`[LLM] Calling Gemini model: ${MODEL_NAME}`)
-    const startTime = Date.now()
-
     const model = getGenAI().getGenerativeModel({
       model: MODEL_NAME,
       generationConfig: {
@@ -48,9 +44,6 @@ export async function generateCoachReport(prompt: string): Promise<string> {
     const result = await model.generateContent(prompt)
     const response = await result.response
     const text = response.text()
-
-    const elapsed = Date.now() - startTime
-    console.log(`[LLM] Gemini response received in ${elapsed}ms, length: ${text.length} chars`)
 
     if (!text) {
       console.error('[LLM] Empty response from Gemini')
@@ -77,8 +70,6 @@ export async function generateCoachReportStream(
   }
 
   try {
-    console.log(`[LLM] Streaming from Gemini model: ${MODEL_NAME}`)
-
     const model = getGenAI().getGenerativeModel({
       model: MODEL_NAME,
       generationConfig: {

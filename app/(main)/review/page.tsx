@@ -26,30 +26,24 @@ export default async function ReviewPage() {
   const focusTeamName = normalizeTeamName(focusTeam.teamName)
   await connectToDB()
 
-  const matches = await Match.aggregate<ProjectedReviewSeries>([
-    { $match: { 'analytics.evidence_v1.derived.mapsStats.teamId': focusTeam.teamId } },
+  const matches = await Match.find(
+    { 'analytics.evidence_v1.derived.mapsStats.teamId': focusTeam.teamId },
     {
-      $set: {
-        reviewDate: { $min: '$analytics.evidence_v1.rounds.firstBlood.timestamp' },
-      },
-    },
-    { $sort: { reviewDate: -1, _id: -1 } },
-    { $limit: 20 },
-    {
-      $project: {
-        gridSeriesId: 1,
-        map: 1,
-        'analytics.evidence_v1.games': 1,
-        'analytics.evidence_v1.rounds': 1,
-        'analytics.evidence_v1.plants': 1,
-        'analytics.evidence_v1.clutchSituations': 1,
-        'analytics.evidence_v1.economyRounds': 1,
-        'analytics.evidence_v1.derived.mapsStats': 1,
-        'analytics.evidence_v1.derived.manAdvantageStats': 1,
-        'analytics.evidence_v1.derived.criticalRounds': 1,
-      },
-    },
-  ])
+      gridSeriesId: 1,
+      map: 1,
+      'analytics.evidence_v1.games': 1,
+      'analytics.evidence_v1.rounds': 1,
+      'analytics.evidence_v1.plants': 1,
+      'analytics.evidence_v1.clutchSituations': 1,
+      'analytics.evidence_v1.economyRounds': 1,
+      'analytics.evidence_v1.derived.mapsStats': 1,
+      'analytics.evidence_v1.derived.manAdvantageStats': 1,
+      'analytics.evidence_v1.derived.criticalRounds': 1,
+    }
+  )
+    .sort({ 'analytics.evidence_v1.rounds.firstBlood.timestamp': -1, _id: -1 })
+    .limit(20)
+    .lean() as unknown as ProjectedReviewSeries[]
 
   const seriesList: ReviewSeriesInput[] = matches.flatMap(match => {
     const evidence = match.analytics?.evidence_v1

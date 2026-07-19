@@ -290,9 +290,6 @@ export function VisualizationsPanel({
               highlights={filteredHighlights.slice(0, 5)}
               focusTeamName={teamNames.team}
               opponentName={teamNames.opponent}
-              onRoundSelect={(round, gameId) => {
-                console.log(`Selected round ${round} from game ${gameId}`)
-              }}
             />
           )}
         </TabsContent>
@@ -378,9 +375,6 @@ export function VisualizationsPanel({
             highlights={filteredHighlights}
             focusTeamName={teamNames.team}
             opponentName={teamNames.opponent}
-            onRoundSelect={(round, gameId) => {
-              console.log(`Selected round ${round} from game ${gameId}`)
-            }}
           />
         </TabsContent>
       </Tabs>

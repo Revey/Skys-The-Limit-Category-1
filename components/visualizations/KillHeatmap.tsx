@@ -164,34 +164,22 @@ export default function KillHeatmap({
     return weaponScopeKills.filter(kill => kill.weapon?.trim() === selectedWeapon)
   }, [selectedWeapon, weaponScopeKills])
 
-  const { positionedKills, droppedPointCount } = useMemo(() => {
+  const positionedKills = useMemo(() => {
     if (!mapSettings) {
-      return { positionedKills: [], droppedPointCount: displayKills.length }
+      return []
     }
 
-    let droppedCount = 0
-    const positioned = displayKills.flatMap((kill, index) => {
+    return displayKills.flatMap((kill, index) => {
       const victimPosition = worldToMinimap(kill.victimPosition, mapSettings)
       const killerPosition = worldToMinimap(kill.killerPosition, mapSettings)
 
       if (!victimPosition) {
-        droppedCount += 1
         return []
       }
 
       return [{ kill, killerPosition, victimPosition, index }]
     })
-
-    return { positionedKills: positioned, droppedPointCount: droppedCount }
   }, [displayKills, mapSettings])
-
-  useEffect(() => {
-    if (droppedPointCount > 0) {
-      console.debug(
-        `[KillHeatmap] Dropped ${droppedPointCount} out-of-bounds point(s) for ${mapName}`
-      )
-    }
-  }, [droppedPointCount, mapName])
 
   useEffect(() => {
     setHoveredKill(null)

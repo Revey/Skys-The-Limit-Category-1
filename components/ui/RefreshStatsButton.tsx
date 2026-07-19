@@ -20,7 +20,7 @@ export function RefreshStatsButton({ teamId }: RefreshStatsButtonProps) {
     try {
       const response = await fetch(
         `/api/refresh-stats?teamId=${encodeURIComponent(teamId)}`,
-        { cache: 'no-store' }
+        { method: 'POST', cache: 'no-store' }
       )
       const result = await response.json()
       if (!response.ok) {

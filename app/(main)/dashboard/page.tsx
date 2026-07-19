@@ -41,14 +41,8 @@ function getTournamentInfo(seriesId: string): { tournamentName: string; matchDat
 }
 
 export default async function DashboardPage() {
-  console.log('[DASHBOARD] Starting page render...')
-  const startTime = Date.now()
-
   // await requireAuth()
-  console.log('[DASHBOARD] Auth check bypassed')
-
   await connectToDB()
-  console.log('[DASHBOARD] DB connection completed in', Date.now() - startTime, 'ms')
 
   const focusTeam = getFocusTeam(await cookies())
   const tendencySeriesPromise = getTeamSeriesDerived(focusTeam.teamId)
@@ -71,8 +65,6 @@ export default async function DashboardPage() {
   const scorecardPercentiles: ScorecardPercentiles = Object.fromEntries(
     scorecardMetricKeys.map((k) => [k, leagueBenchmarks?.percentileFor(focusTeam.teamId, k) ?? null])
   )
-
-  console.log('[DASHBOARD] Stats fetch completed in', Date.now() - startTime, 'ms')
 
   if (!dashboardStatsDoc) {
     return (

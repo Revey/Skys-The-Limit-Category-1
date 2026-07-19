@@ -44,6 +44,7 @@ function estimateMatchDate(seriesId: string): string {
 export const dynamic = 'force-dynamic'
 
 type Props = { params: Promise<{ matchId: string }> }
+type ProjectedMatch = Pick<MatchDocument, '_id' | 'gridSeriesId' | 'analytics'>
 
 export default async function MatchDetailPage({ params }: Props) {
   // await requireAuth()
@@ -51,7 +52,11 @@ export default async function MatchDetailPage({ params }: Props) {
   const focusTeam = getFocusTeam(await cookies())
   await connectToDB()
 
-  const match = (await Match.findById(matchId).lean()) as unknown as MatchDocument | null
+  const match = (await Match.findById(matchId, {
+    _id: 1,
+    gridSeriesId: 1,
+    'analytics.evidence_v1': 1,
+  }).lean()) as unknown as ProjectedMatch | null
 
   if (!match) {
     return (
@@ -205,8 +210,6 @@ export default async function MatchDetailPage({ params }: Props) {
     seriesWon,
     games: gamesWithScores,
     playerStatsByGame,
-    // Pass evidence-derived stats for each game
-    derivedStats: evidence.derived || {},
   }
 
   return <MatchDetailClient seriesData={seriesData} />

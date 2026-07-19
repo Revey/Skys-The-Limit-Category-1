@@ -13,6 +13,22 @@ interface OpponentRecordInternal {
   mapsLost: number
 }
 
+function getEvidenceSeriesTimestamp(match: MatchDocument): number {
+  let earliestTimestamp = Number.POSITIVE_INFINITY
+
+  for (const round of match.analytics?.evidence_v1?.rounds || []) {
+    const timestamp = round.firstBlood?.timestamp
+    if (!timestamp) continue
+
+    const value = Date.parse(timestamp)
+    if (!Number.isNaN(value) && value < earliestTimestamp) {
+      earliestTimestamp = value
+    }
+  }
+
+  return Number.isFinite(earliestTimestamp) ? earliestTimestamp : 0
+}
+
 /**
  * Compute dashboard statistics from match data for storage in DashboardStats collection
  * This is the same logic as the original computeDashboardStats but returns data in storage format
@@ -38,16 +54,20 @@ export function computeDashboardStatsForStorage(
   }
 
   const seriesResults: Array<{
-    seriesId: string
-    opponent: string
-    c9MapsWon: number
-    opponentMapsWon: number
-    isWin: boolean
-    games: Array<{
-      mapName: string
-      c9Rounds: number
-      opponentRounds: number
-    }>
+    evidenceTimestamp: number
+    data: {
+      seriesId: string
+      opponent: string
+      c9MapsWon: number
+      opponentMapsWon: number
+      isWin: boolean
+      matchDate?: string
+      games: Array<{
+        mapName: string
+        c9Rounds: number
+        opponentRounds: number
+      }>
+    }
   }> = []
 
   const mapsPlayed: Record<string, number> = {}
@@ -133,7 +153,21 @@ export function computeDashboardStatsForStorage(
       }
     }
 
-    seriesResults.push({ seriesId, opponent: opponentName, c9MapsWon, opponentMapsWon, isWin, games: gameResults })
+    const evidenceTimestamp = getEvidenceSeriesTimestamp(match)
+    seriesResults.push({
+      evidenceTimestamp,
+      data: {
+        seriesId,
+        opponent: opponentName,
+        c9MapsWon,
+        opponentMapsWon,
+        isWin,
+        matchDate: evidenceTimestamp
+          ? new Date(evidenceTimestamp).toISOString().slice(0, 10)
+          : undefined,
+        games: gameResults,
+      },
+    })
 
     // Calculate attack/defense win rates
     const rounds = evidence.rounds || []
@@ -165,8 +199,15 @@ export function computeDashboardStatsForStorage(
 
   // Calculate totals
   const totalSeries = seriesMap.size
-  const seriesWins = seriesResults.filter((s) => s.isWin).length
-  const seriesLosses = seriesResults.filter((s) => !s.isWin).length
+  const seriesWins = seriesResults.filter((series) => series.data.isWin).length
+  const seriesLosses = seriesResults.filter((series) => !series.data.isWin).length
+  const recentSeries = seriesResults
+    .sort((a, b) =>
+      b.evidenceTimestamp - a.evidenceTimestamp ||
+      Number.parseInt(b.data.seriesId, 10) - Number.parseInt(a.data.seriesId, 10)
+    )
+    .slice(0, 10)
+    .map((series) => series.data)
 
   return {
     teamId,
@@ -176,7 +217,7 @@ export function computeDashboardStatsForStorage(
     mapsPlayed: new Map(Object.entries(mapsPlayed)),
     attackWinRate: totalAttackRounds > 0 ? totalAttackWins / totalAttackRounds : 0,
     defenseWinRate: totalDefenseRounds > 0 ? totalDefenseWins / totalDefenseRounds : 0,
-    recentSeries: seriesResults.slice(0, 10),
+    recentSeries,
     strugglingAgainst,
     lastUpdated: new Date(),
     matchesProcessed: focusTeamMatches.length,

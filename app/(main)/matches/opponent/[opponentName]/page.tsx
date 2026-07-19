@@ -108,7 +108,11 @@ export default async function OpponentDetailPage({ params }: Props) {
   await connectToDB()
 
   const matches = (await Match.aggregate([
-    { $match: { 'analytics.evidence_v1': { $exists: true } } },
+    {
+      $match: {
+        'analytics.evidence_v1.derived.mapsStats.teamId': focusTeam.teamId,
+      },
+    },
     {
       $project: {
         _id: 1,
@@ -151,9 +155,6 @@ export default async function OpponentDetailPage({ params }: Props) {
     const mapsStats = getMapsStats(evidence)
     const games = evidence.games || []
     const seriesId = match.gridSeriesId
-
-    const hasFocusTeam = mapsStats.some(stat => stat.teamId === focusTeam.teamId)
-    if (!hasFocusTeam) continue
 
     let foundOpponent = ''
     for (const stat of mapsStats) {

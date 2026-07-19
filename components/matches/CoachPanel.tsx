@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { Sparkles, AlertCircle } from 'lucide-react'
 import { normalizeTeamName } from '@/lib/teamUtils'
 
@@ -17,7 +17,58 @@ interface GameInfo {
   sequenceNumber: number
 }
 
-// Enhanced markdown renderer for coaching reports
+function renderInlineMarkdown(text: string): ReactNode[] {
+  const tokenPattern = /(\*\*.+?\*\*|__.+?__|\*.+?\*|_.+?_|\d+(?:\.\d+)?%|\(\d+[KkDd]\/\d+[KkDd]\)|\d+W\s*-\s*\d+L)/g
+  const nodes: ReactNode[] = []
+  let cursor = 0
+  let key = 0
+
+  for (const match of text.matchAll(tokenPattern)) {
+    const index = match.index ?? 0
+    if (index > cursor) {
+      nodes.push(text.slice(cursor, index))
+    }
+
+    const token = match[0]
+    if ((token.startsWith('**') && token.endsWith('**')) ||
+        (token.startsWith('__') && token.endsWith('__'))) {
+      nodes.push(
+        <strong key={key++} className="font-semibold text-white">
+          {token.slice(2, -2)}
+        </strong>
+      )
+    } else if ((token.startsWith('*') && token.endsWith('*')) ||
+               (token.startsWith('_') && token.endsWith('_'))) {
+      nodes.push(
+        <em key={key++} className="text-[#00aeef]">
+          {token.slice(1, -1)}
+        </em>
+      )
+    } else if (token.endsWith('%')) {
+      nodes.push(
+        <span key={key++} className="font-medium text-yellow-400">{token}</span>
+      )
+    } else if (/^\(\d+[KkDd]\/\d+[KkDd]\)$/.test(token)) {
+      nodes.push(
+        <span key={key++} className="font-mono text-[#00c8ff]">{token}</span>
+      )
+    } else {
+      nodes.push(
+        <span key={key++} className="font-medium text-emerald-400">{token}</span>
+      )
+    }
+
+    cursor = index + token.length
+  }
+
+  if (cursor < text.length) {
+    nodes.push(text.slice(cursor))
+  }
+
+  return nodes
+}
+
+// Safe markdown renderer for coaching reports. React escapes every text node.
 function renderMarkdown(text: string): JSX.Element {
   const lines = text.split('\n')
   const elements: JSX.Element[] = []
@@ -32,7 +83,9 @@ function renderMarkdown(text: string): JSX.Element {
       elements.push(
         <ListTag key={elements.length} className={listType === 'ul' ? 'list-disc pl-6 space-y-3 my-4' : 'list-decimal pl-6 space-y-3 my-4'}>
           {listItems.map((item, i) => (
-            <li key={i} className="text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(item) }} />
+            <li key={i} className="text-gray-300 leading-relaxed">
+              {renderInlineMarkdown(item)}
+            </li>
           ))}
         </ListTag>
       )
@@ -60,22 +113,6 @@ function renderMarkdown(text: string): JSX.Element {
       metaItems = []
       inMetaSection = false
     }
-  }
-
-  const formatInline = (text: string): string => {
-    // Bold
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
-    text = text.replace(/__(.+?)__/g, '<strong class="font-semibold text-white">$1</strong>')
-    // Italic
-    text = text.replace(/\*(.+?)\*/g, '<em class="text-[#00aeef]">$1</em>')
-    text = text.replace(/_(.+?)_/g, '<em class="text-[#00aeef]">$1</em>')
-    // Percentages - highlight them
-    text = text.replace(/(\d+(?:\.\d+)?%)/g, '<span class="text-yellow-400 font-medium">$1</span>')
-    // KD ratios like (7K/4D)
-    text = text.replace(/\((\d+[KkDd]\/\d+[KkDd])\)/g, '<span class="text-[#00c8ff] font-mono">($1)</span>')
-    // Win rates and specific stats
-    text = text.replace(/(\d+W\s*-\s*\d+L)/g, '<span class="text-emerald-400 font-medium">$1</span>')
-    return text
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -187,7 +224,9 @@ function renderMarkdown(text: string): JSX.Element {
     flushList()
     flushMeta()
     elements.push(
-      <p key={elements.length} className="text-gray-300 my-3 leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInline(trimmed) }} />
+      <p key={elements.length} className="text-gray-300 my-3 leading-relaxed">
+        {renderInlineMarkdown(trimmed)}
+      </p>
     )
   }
 

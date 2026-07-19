@@ -66,10 +66,6 @@ async function refreshStats(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
-  return refreshStats(req)
-}
-
 export async function POST(req: NextRequest) {
   return refreshStats(req)
 }
