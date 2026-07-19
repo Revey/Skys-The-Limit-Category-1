@@ -78,27 +78,6 @@ function renderMarkdown(text: string): JSX.Element {
     return text
   }
 
-  const getSectionIcon = (headerText: string): string => {
-    if (headerText.includes('EVIDENCE')) return '📊'
-    if (headerText.includes('INSIGHT')) return '💡'
-    if (headerText.includes('RECOMMENDATION')) return '🎯'
-    return '📋'
-  }
-
-  const getSectionColor = (headerText: string): string => {
-    if (headerText.includes('EVIDENCE')) return 'text-cyan-400 border-cyan-500/40'
-    if (headerText.includes('INSIGHT')) return 'text-purple-400 border-purple-500/40'
-    if (headerText.includes('RECOMMENDATION')) return 'text-green-400 border-green-500/40'
-    return 'text-[#00aeef] border-[#00aeef]/40'
-  }
-
-  const getSectionBg = (headerText: string): string => {
-    if (headerText.includes('EVIDENCE')) return 'bg-cyan-500/5'
-    if (headerText.includes('INSIGHT')) return 'bg-purple-500/5'
-    if (headerText.includes('RECOMMENDATION')) return 'bg-green-500/5'
-    return 'bg-[#00aeef]/5'
-  }
-
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const trimmed = line.trim()
@@ -134,19 +113,16 @@ function renderMarkdown(text: string): JSX.Element {
       flushMeta()
     }
 
-    // Handle ### headers (h3) - commonly used by LLM for EVIDENCE/INSIGHT/RECOMMENDATION
+    // Handle any ### header (h3)
     if (trimmed.startsWith('### ')) {
       flushList()
       flushMeta()
-      const headerText = trimmed.slice(4).toUpperCase()
-      const colorClass = getSectionColor(headerText)
-      const bgClass = getSectionBg(headerText)
-      const icon = getSectionIcon(headerText)
+      const headerText = trimmed.slice(4).trim()
       
       elements.push(
-        <div key={elements.length} className={`mt-8 mb-4 ${bgClass} -mx-2 px-2 py-1 rounded-lg`}>
-          <h3 className={`text-base font-bold ${colorClass} pb-2 border-b flex items-center gap-2`}>
-            <span className="text-lg">{icon}</span>
+        <div key={elements.length} className="mt-8 mb-4 bg-[#00aeef]/5 -mx-2 px-2 py-1 rounded-lg">
+          <h3 className="text-base font-bold text-[#00aeef] border-[#00aeef]/40 pb-2 border-b flex items-center gap-2">
+            <span className="text-lg">📋</span>
             {headerText}
           </h3>
         </div>
@@ -158,15 +134,12 @@ function renderMarkdown(text: string): JSX.Element {
     if (trimmed.startsWith('## ')) {
       flushList()
       flushMeta()
-      const headerText = trimmed.slice(3).toUpperCase()
-      const colorClass = getSectionColor(headerText)
-      const bgClass = getSectionBg(headerText)
-      const icon = getSectionIcon(headerText)
+      const headerText = trimmed.slice(3).trim()
       
       elements.push(
-        <div key={elements.length} className={`mt-8 mb-4 ${bgClass} -mx-2 px-2 py-1 rounded-lg`}>
-          <h2 className={`text-lg font-bold ${colorClass} pb-2 border-b flex items-center gap-2`}>
-            <span className="text-lg">{icon}</span>
+        <div key={elements.length} className="mt-8 mb-4 bg-[#00aeef]/5 -mx-2 px-2 py-1 rounded-lg">
+          <h2 className="text-lg font-bold text-[#00aeef] border-[#00aeef]/40 pb-2 border-b flex items-center gap-2">
+            <span className="text-lg">📋</span>
             {headerText}
           </h2>
         </div>
@@ -374,10 +347,8 @@ export function CoachPanel({
 
         {!report && !loading && !error && (
           <p className="text-sm text-gray-500">
-            Click the button above to generate an AI coaching report with 
-            <strong className="text-cyan-400"> Evidence</strong>, 
-            <strong className="text-purple-400"> Insights</strong>, and 
-            <strong className="text-green-400"> Recommendations</strong> for the selected map.
+            Click the button above to generate an AI coaching report covering the
+            costliest mistakes, what worked, and this week&apos;s drills for the selected map.
           </p>
         )}
       </div>

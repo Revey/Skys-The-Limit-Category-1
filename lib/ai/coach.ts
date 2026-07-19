@@ -589,12 +589,8 @@ ${analytics.postPlantWinRate !== undefined ? `- Post-Plant Win Rate: ${(analytic
   const mapName = evidence?.meta?.mapName || map
 
   return `
-You are an assistant coach for a professional Valorant team.
-
 You are reviewing ${isMapFiltered ? `a single MAP (${mapName}) from a series` : 'a single match'} for ${teamName} against ${opponentName}.
 ${isMapFiltered ? `NOTE: All statistics below are filtered to ONLY this map. Use this for map-specific tactical analysis.` : ''}
-Use the structured stats below to produce a concise and practical coaching report.
-
 Match context:
 - Event: ${eventName ?? 'Unknown event'}
 - Date: ${date}
@@ -607,73 +603,24 @@ ${playerLines}
 Top performers (by KD):
 ${topPlayerLines}
 ${evidenceSection}
-Guidelines:
-- Assume you are talking to the coaching staff, not directly to the players.
-- Focus on patterns, decision making and macro tendencies, not just raw aim.
-- Do not invent stats that are not provided. If something is missing, ignore it.
-- Make feedback specific and actionable.
-- Use the EVIDENCE section to ground your insights in data about first bloods, plant situations, isolated deaths, site-specific performance, clutch situations, economy management, ability usage, multi-kill impact, and agent compositions.
-- When agent compositions are provided, consider how team compositions might have influenced outcomes.
-- When site stats are provided, identify which sites teams favor and their success rates on each.
-- When clutch stats are provided, identify which players excel in high-pressure 1vX situations.
-- When economy stats are provided, analyze buy decisions, force buy success rates, and economic discipline.
-- When ability usage stats are provided, identify players who may be over/under-utilizing agent abilities.
-- When multi-kill stats are provided, identify players who can turn rounds with high-kill performances. Aces and 4ks are especially impactful.
-- Analyze trade patterns: players with low traded rates may be over-extending or taking isolated fights.
-- High trade-getters indicate good team coordination and positioning.
-- Analyze opening duel patterns: players with high opening kill rates on attack may be good entry fraggers.
-- Compare attack vs defense opening performance to identify role fit.
-- Low opening death survival indicates poor team support when entry player dies.
-- When weapon stats are provided, identify if players are effective with their preferred weapons and if there are weapon choices mismatched to economic situations.
-- Operator specialists with high opening kills indicate strong AWP presence. Low operator kills might suggest the role isn't being utilized.
-- When engagement range stats are provided, identify if players are fighting at optimal distances for their roles. Entry fraggers should win close-range fights.
-- When tempo stats are provided, analyze attack pacing. High late-plant rates with low win rates suggest execution timing issues.
-- Fast executes with high success indicate well-drilled set plays. Slow tempo with losses may indicate indecision or poor mid-round calls.
-- When save round stats are provided, evaluate discipline. Many exit frag attempts but low success suggests over-aggression on saves.
-- When anti-eco stats are provided, identify if the team is losing rounds they should win. Deaths to specific weapons (e.g., Spectre) indicate positioning issues.
-- When half stats are provided, compare adaptation between halves. Teams that improve in the second half show good mid-match adjustments.
-- When utility impact stats are provided, identify players who create kill opportunities for teammates through flashes and other utility. High flash assist rates indicate strong team coordination.
-- When team utility coordination stats are provided, compare teams' ability to convert utility usage into kills. Higher coordination scores indicate better-drilled executes.
-- When post-plant stats are provided, analyze site-specific performance in post-plant scenarios. Negative KD on a site may indicate poor positioning or callouts.
-- When player matchup stats are provided, identify nemesis relationships (players consistently losing to specific opponents) and favorable matchups (players dominating specific opponents). Use this for strategic player positioning.
-- When map control stats are provided, evaluate early-round aggression success. Teams with high early kill differentials have strong map control. Low aggressive opening win rates suggest overcommitting.
-- When pistol stats are provided, analyze pistol round economy and bonus conversion. High pistol win rate with low bonus conversion suggests inability to capitalize on economic advantage.
-- Attack vs defense pistol win rates may indicate which side needs pistol strat improvements. Identify pistol kill leaders for potential designated pistol callers.
-- When man advantage stats are provided, identify throw rates (losing with numbers advantage) and comeback rates. High throw rates indicate poor discipline or coordination under pressure.
-- Teams with low advantage conversion but high comebacks may have mental resilience but tactical issues.
-- When retake stats are provided, analyze site-specific retake success. Low retake rates on specific sites may indicate poor utility allocation or passive positioning.
-- Identify top defusers for clutch situations and retake assignments.
-- When entry stats are provided, compare entry fraggers' success rates and flash support impact. High flash-supported win rates vs low dry entry rates suggest team is over-relying on flash support.
-- Entry players with high death rates but low trade rates indicate poor follow-up from teammates.
-- When spike carrier stats are provided, analyze carrier death rates and plant success. High carrier death rate before plant suggests predictable spike pathing or poor support.
-- When momentum stats are provided, analyze streak patterns. Teams with high resilience scores recover well from losses. Low momentum scores with many loss streaks indicate tilt susceptibility.
-- Identify streak triggers (clutch wins, eco steals) and breakers (throws, economy resets) to understand psychological patterns.
-- When critical round stats are provided, focus VOD review on low-winrate critical situations (match point, close score, clutches). These are highest-leverage improvement opportunities.
-- When execute pattern stats are provided, analyze site preferences and timing. High predictability scores suggest teams are readable and need variation.
-- Teams with low dry entry win rates but high flash-supported rates are over-reliant on utility. Teams with high early execute success should lean into fast plays.
-- When performance trend stats are provided, identify fatigue indicators. Late game dropoffs suggest stamina issues or need for tactical adjustments post-round-18.
-- Declining headshot trends mid-match indicate mechanical fatigue. Stable trends with struggling phases indicate tactical rather than mechanical issues.
-- When composition stats are provided, analyze agent flexibility. Low flexibility with high win rates indicates a refined, optimized pool. Low flexibility with low win rates suggests inflexibility hurting adaptation.
-- Compare map-specific compositions to identify where agent experimentation may be needed.
+You are ${teamName}'s assistant coach delivering a blunt post-match debrief of the ${mapName} match vs ${opponentName} (${teamRoundsWon}-${teamRoundsLost}).
 
-Output format (STRICTLY follow this markdown structure with ## headers):
+From ALL the stats above, pick ONLY the 3 mistakes that cost the most rounds in this match (candidates: throws with man advantage, lost anti-ecos, entry/trade failures, isolated deaths, pistol/bonus losses, post-plant losses, economy indiscipline). Ignore everything that was not costly in THIS match. Never base a claim on n<5.
 
-## EVIDENCE
-- List 3-5 key data points with specific numbers from the stats above
-- Include player names and percentages where relevant (e.g., "Xeppaa achieved 64% opening duel win rate (7K/4D)")
-- Focus on: first blood conversion, plant success, isolated deaths, clutch performance, economy, trades, opening duels, weapon performance, engagement range, tempo, save round discipline, anti-eco performance, half adaptation, utility impact, post-plant positioning, player matchups, map control, pistol rounds, man advantage conversion, retakes, entry fragging, spike carrier, momentum/streaks, critical rounds, execute patterns, performance trends, composition effectiveness
+Output format (STRICT):
 
-## INSIGHT
-- 2-4 bullet points explaining what these patterns mean for team performance
-- Connect evidence to tactical decisions, positioning issues, or coordination gaps
-- Highlight both strengths to maintain and weaknesses to address
+## What Cost Us
+Exactly 3 bullets, most costly first. Each bullet ONE sentence: the number → the mistake → the fix. Example style: "Lost 3/3 rounds with 5v3 advantage — discipline collapses when ahead; drill closing protocols (no hunting, play post-plant default)."
 
-## RECOMMENDATION
-- 3-5 specific, actionable practice items for the coaching staff to implement
-- Reference the evidence (e.g., "Given the 25% eco round win rate, develop specific eco strats for each site")
-- Prioritize by impact: what changes would most improve round win rate?
+## What Worked
+Exactly 1 bullet, one sentence, keep-doing item with its number.
 
-IMPORTANT: Use exactly "## EVIDENCE", "## INSIGHT", "## RECOMMENDATION" as section headers (two hashtags, not three).
+## Fix This Week
+Exactly 2 bullets, each ONE concrete practice drill tied to a cited number.
+
+Hard cap: 130 words total. No intro/outro, no hedging, no repetition of the section names in prose. Plain coach language.
+
+If the team won, "What Cost Us" bullets are the weaknesses the opponent still exposed.
   `.trim()
 }
 

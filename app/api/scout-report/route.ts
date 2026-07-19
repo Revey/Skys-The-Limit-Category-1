@@ -195,16 +195,18 @@ At least one bullet in Exploitable Weaknesses or Dangers To Respect must name a 
 MAP-POOL COMPARISON
 ${mapPoolInstruction}
 
-Return no more than 450 words and exactly these four sections, in this order:
+Write like a coach talking to coaches: blunt, no filler adjectives. Every bullet must be ONE sentence in the number → meaning → action shape.
+
+Return no more than 280 words and exactly these four sections, in this order:
 
 ## Identity
-Write 2-3 sentences.
+Write no more than 2 sentences.
 
 ## Exploitable Weaknesses
-Write exactly 3 bullets. Each bullet must explicitly follow: Evidence → Insight → Recommendation.
+Write exactly 3 bullets. Each bullet must explicitly follow Evidence (number) → Insight (meaning) → Recommendation (action).
 
 ## Dangers To Respect
-Write exactly 2 bullets. Each bullet must explicitly follow: Evidence → Insight → Recommendation.
+Write exactly 2 bullets. Each bullet must explicitly follow Evidence (number) → Insight (meaning) → Recommendation (action).
 
 ## Suggested Ban/Pick Considerations
 Write exactly 2 map-pool-based bullets following the map-pool instruction above.
