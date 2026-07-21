@@ -9,6 +9,9 @@ import { normalizeTeamName } from '@/lib/teamUtils'
 import { CoachPanel } from '@/components/matches/CoachPanel'
 import { EvidencePanel } from '@/components/matches/EvidencePanel'
 import { VisualizationsPanel } from '@/components/matches/VisualizationsPanel'
+import { AdvancedDataDrawer } from '@/components/matches/AdvancedDataDrawer'
+import { KeyIndicators } from '@/components/matches/KeyIndicators'
+import { RoundsToReview } from '@/components/matches/RoundsToReview'
 
 interface GameData {
   gameId: string
@@ -43,7 +46,6 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
   
   const selectedGame = seriesData.games.find(g => g.gameId === selectedGameId) || seriesData.games[0]
   const selectedMapImage = selectedGame ? getMapImage(selectedGame.mapName) : null
-  const selectedPlayers = seriesData.playerStatsByGame[selectedGameId] || []
 
   return (
     <div className="min-h-screen relative">
@@ -166,80 +168,6 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
             </div>
           </div>
 
-          {/* Stats for Selected Map */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="card card-hover p-6 backdrop-blur-xl bg-gray-900/70">
-              <div className="text-sm text-gray-400 mb-2">Rounds Won</div>
-              <div className="text-4xl font-bold text-green-400">{selectedGame?.c9Rounds || 0}</div>
-            </div>
-            <div className="card card-hover p-6 backdrop-blur-xl bg-gray-900/70">
-              <div className="text-sm text-gray-400 mb-2">Rounds Lost</div>
-              <div className="text-4xl font-bold text-red-400">{selectedGame?.opponentRounds || 0}</div>
-            </div>
-          </div>
-
-          {/* Player Stats for Selected Map */}
-          {selectedPlayers.length > 0 && (
-            <section className="card backdrop-blur-xl bg-gray-900/70">
-              <div className="px-6 py-4 border-b border-gray-800">
-                <h2 className="text-xl font-semibold text-white">
-                  Player Stats - <span className="capitalize text-[#00aeef]">{selectedGame?.mapName}</span>
-                </h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="text-left py-4 px-6 text-gray-400 font-medium">Player</th>
-                      <th className="text-center py-4 px-6 text-gray-400 font-medium">Kills</th>
-                      <th className="text-center py-4 px-6 text-gray-400 font-medium">Deaths</th>
-                      <th className="text-center py-4 px-6 text-gray-400 font-medium">K/D</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedPlayers
-                      .sort((a: any, b: any) => b.kd - a.kd)
-                      .map((player: any) => (
-                        <tr key={player.playerId} className="border-b border-gray-800/50 hover:bg-black/20">
-                          <td className="py-4 px-6 text-gray-300 font-medium">
-                            {player.playerName || `Player ${player.playerId}`}
-                          </td>
-                          <td className="py-4 px-6 text-center text-green-400 font-semibold">{player.kills}</td>
-                          <td className="py-4 px-6 text-center text-red-400">{player.deaths}</td>
-                          <td className="py-4 px-6 text-center">
-                            <span className={`font-semibold ${player.kd >= 1 ? 'text-green-400' : 'text-red-400'}`}>
-                              {player.kd?.toFixed(2) || '0.00'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {/* Visualizations Panel - Sprint 7 */}
-          <div className="backdrop-blur-xl">
-            <VisualizationsPanel
-              matchId={seriesData.matchId}
-              selectedGameId={selectedGameId}
-              teamId={seriesData.focusTeamId}
-              teamName={seriesData.focusTeamName}
-            />
-          </div>
-
-          {/* Evidence Panel - with synced map selection */}
-          <div className="backdrop-blur-xl">
-            <EvidencePanel
-              matchId={seriesData.matchId}
-              selectedGameId={selectedGameId}
-              onGameChange={setSelectedGameId}
-              teamId={seriesData.focusTeamId}
-              teamName={seriesData.focusTeamName}
-            />
-          </div>
-
           {/* Coach Panel - with synced map selection */}
           <div className="backdrop-blur-xl">
             <CoachPanel
@@ -249,6 +177,42 @@ export function MatchDetailClient({ seriesData }: MatchDetailClientProps) {
               teamName={seriesData.focusTeamName}
             />
           </div>
+
+          <KeyIndicators
+            matchId={seriesData.matchId}
+            selectedGameId={selectedGameId}
+            teamId={seriesData.focusTeamId}
+            teamName={seriesData.focusTeamName}
+          />
+
+          <RoundsToReview
+            matchId={seriesData.matchId}
+            selectedGameId={selectedGameId}
+            teamId={seriesData.focusTeamId}
+          />
+
+          <AdvancedDataDrawer>
+            {/* Visualizations Panel - Sprint 7 */}
+            <div className="backdrop-blur-xl">
+              <VisualizationsPanel
+                matchId={seriesData.matchId}
+                selectedGameId={selectedGameId}
+                teamId={seriesData.focusTeamId}
+                teamName={seriesData.focusTeamName}
+              />
+            </div>
+
+            {/* Evidence Panel - with synced map selection */}
+            <div className="backdrop-blur-xl">
+              <EvidencePanel
+                matchId={seriesData.matchId}
+                selectedGameId={selectedGameId}
+                onGameChange={setSelectedGameId}
+                teamId={seriesData.focusTeamId}
+                teamName={seriesData.focusTeamName}
+              />
+            </div>
+          </AdvancedDataDrawer>
         </div>
       </div>
     </div>

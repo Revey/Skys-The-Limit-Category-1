@@ -576,18 +576,16 @@ export function EvidencePanel({
       .map(([playerId, stats]) => {
         const player = evidence.players.find(p => p.playerId === playerId)
         const teamId = playerTeams.get(playerId) || ''
-        const impactScore = stats.twoKs * 1 + stats.threeKs * 2 + stats.fourKs * 3 + stats.aces * 5
         return {
           playerId,
           playerName: player?.playerName || `Player ${playerId}`,
           teamId,
           teamName: teamMap[teamId] || `Team ${teamId}`,
           ...stats,
-          totalMultiKills: stats.twoKs + stats.threeKs + stats.fourKs + stats.aces,
-          impactScore
+          totalMultiKills: stats.twoKs + stats.threeKs + stats.fourKs + stats.aces
         }
       })
-      .sort((a, b) => b.impactScore - a.impactScore)
+      .sort((a, b) => b.totalMultiKills - a.totalMultiKills)
 
     // Trade stats - compute from filtered kills
     const TRADE_WINDOW_MS = 3000
@@ -787,8 +785,6 @@ export function EvidencePanel({
               <thead>
                 <tr className="border-b border-gray-800">
                   <th className="py-4 px-6 text-left text-gray-400 font-medium">Team</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">First Bloods</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Rounds Won</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Conversion</th>
                 </tr>
               </thead>
@@ -798,11 +794,9 @@ export function EvidencePanel({
                     <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                       {normalizeTeamName(stat.teamName)}
                     </td>
-                    <td className="py-4 px-6 text-center text-[#00aeef] font-semibold">{stat.firstBloods}</td>
-                    <td className="py-4 px-6 text-center text-green-400">{stat.roundsWon}</td>
                     <td className="py-4 px-6 text-center">
                       <span className={`font-semibold ${stat.conversionRate >= 0.6 ? 'text-green-400' : stat.conversionRate >= 0.4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                        {(stat.conversionRate * 100).toFixed(1)}%
+                        {(stat.conversionRate * 100).toFixed(0)}% ({stat.roundsWon}/{stat.firstBloods})
                       </span>
                     </td>
                   </tr>
@@ -824,8 +818,6 @@ export function EvidencePanel({
               <thead>
                 <tr className="border-b border-gray-800">
                   <th className="py-4 px-6 text-left text-gray-400 font-medium">Team</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Plants</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Post-Plant Wins</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Win Rate</th>
                 </tr>
               </thead>
@@ -835,11 +827,9 @@ export function EvidencePanel({
                     <td className={`py-4 px-6 font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
                       {normalizeTeamName(stat.teamName)}
                     </td>
-                    <td className="py-4 px-6 text-center text-[#00aeef] font-semibold">{stat.plants}</td>
-                    <td className="py-4 px-6 text-center text-green-400">{stat.postPlantWins}</td>
                     <td className="py-4 px-6 text-center">
                       <span className={`font-semibold ${stat.postPlantWinRate >= 0.6 ? 'text-green-400' : stat.postPlantWinRate >= 0.4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                        {(stat.postPlantWinRate * 100).toFixed(1)}%
+                        {(stat.postPlantWinRate * 100).toFixed(0)}% ({stat.postPlantWins}/{stat.plants})
                       </span>
                     </td>
                   </tr>
@@ -930,8 +920,6 @@ export function EvidencePanel({
                 <tr className="border-b border-gray-800">
                   <th className="py-4 px-6 text-left text-gray-400 font-medium">Player</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Team</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Isolated Deaths</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Total Deaths</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Isolation %</th>
                 </tr>
               </thead>
@@ -947,15 +935,9 @@ export function EvidencePanel({
                       <td className={`py-4 px-6 text-center font-medium ${player.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(player.teamId)}
                       </td>
-                      <td className="py-4 px-6 text-center text-red-400 font-semibold">
-                        {player.isolatedDeathsCount}
-                      </td>
-                      <td className="py-4 px-6 text-center text-gray-300">{player.deaths}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`font-semibold ${(player.isolatedDeathsCount / player.deaths) > 0.15 ? 'text-red-400' : 'text-green-400'}`}>
-                          {player.deaths > 0
-                            ? ((player.isolatedDeathsCount / player.deaths) * 100).toFixed(1)
-                            : '0.0'}%
+                          {((player.isolatedDeathsCount / player.deaths) * 100).toFixed(0)}% ({player.isolatedDeathsCount}/{player.deaths})
                         </span>
                       </td>
                     </tr>
@@ -1011,9 +993,6 @@ export function EvidencePanel({
                 <tr className="border-b border-gray-800">
                   <th className="py-4 px-6 text-left text-gray-400 font-medium">Player</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Team</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Duels</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Kills</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Deaths</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Win Rate</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Attack WR</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Defense WR</th>
@@ -1039,22 +1018,19 @@ export function EvidencePanel({
                       <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(stat.teamId)}
                       </td>
-                      <td className="py-4 px-6 text-center text-gray-300">{stat.openingDuels}</td>
-                      <td className="py-4 px-6 text-center text-green-400">{stat.openingKills}</td>
-                      <td className="py-4 px-6 text-center text-red-400">{stat.openingDeaths}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`font-semibold ${getColorClass(winRate)}`}>
-                          {(winRate * 100).toFixed(1)}%
+                          {(winRate * 100).toFixed(0)}% ({stat.openingKills}/{stat.openingDuels})
                         </span>
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span className={`font-semibold ${getColorClass(attackWR)}`}>
-                          {(attackWR * 100).toFixed(1)}%
+                          {(attackWR * 100).toFixed(0)}% ({stat.attackOpeningKills}/{stat.attackOpeningDuels})
                         </span>
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span className={`font-semibold ${getColorClass(defenseWR)}`}>
-                          {(defenseWR * 100).toFixed(1)}%
+                          {(defenseWR * 100).toFixed(0)}% ({stat.defenseOpeningKills}/{stat.defenseOpeningDuels})
                         </span>
                       </td>
                     </tr>
@@ -1079,8 +1055,6 @@ export function EvidencePanel({
                 <tr className="border-b border-gray-800">
                   <th className="py-4 px-6 text-left text-gray-400 font-medium">Player</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Team</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Attempts</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Wins</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Rate</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Breakdown</th>
                 </tr>
@@ -1097,11 +1071,9 @@ export function EvidencePanel({
                       <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(stat.teamId)}
                       </td>
-                      <td className="py-4 px-6 text-center text-gray-300">{stat.clutchAttempts}</td>
-                      <td className="py-4 px-6 text-center text-green-400">{stat.clutchWins}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`font-semibold ${rate >= 0.4 ? 'text-green-400' : rate >= 0.2 ? 'text-yellow-400' : 'text-red-400'}`}>
-                          {(rate * 100).toFixed(1)}%
+                          {(rate * 100).toFixed(0)}% ({stat.clutchWins}/{stat.clutchAttempts})
                         </span>
                       </td>
                       <td className="py-4 px-6 text-center">
@@ -1139,9 +1111,6 @@ export function EvidencePanel({
                 <tr className="border-b border-gray-800">
                   <th className="py-4 px-6 text-left text-gray-400 font-medium">Player</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Team</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Deaths</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Traded</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Untraded</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Trade Rate</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Trades Given</th>
                 </tr>
@@ -1158,12 +1127,9 @@ export function EvidencePanel({
                       <td className={`py-4 px-6 text-center font-medium ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-400'}`}>
                         {getTeamName(stat.teamId)}
                       </td>
-                      <td className="py-4 px-6 text-center text-gray-300">{stat.deaths}</td>
-                      <td className="py-4 px-6 text-center text-green-400">{stat.deathsTraded}</td>
-                      <td className="py-4 px-6 text-center text-red-400">{stat.untradedDeaths}</td>
                       <td className="py-4 px-6 text-center">
                         <span className={`font-semibold ${rate >= 0.3 ? 'text-green-400' : rate >= 0.15 ? 'text-yellow-400' : 'text-red-400'}`}>
-                          {(rate * 100).toFixed(1)}%
+                          {(rate * 100).toFixed(0)}% ({stat.deathsTraded}/{stat.deaths})
                         </span>
                       </td>
                       <td className={`py-4 px-6 text-center ${stat.teamId === focusTeamId ? 'text-[#00aeef]' : 'text-gray-300'}`}>
@@ -1195,7 +1161,6 @@ export function EvidencePanel({
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">3Ks</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">4Ks</th>
                   <th className="py-4 px-6 text-center text-gray-400 font-medium">Aces</th>
-                  <th className="py-4 px-6 text-center text-gray-400 font-medium">Impact Score</th>
                 </tr>
               </thead>
               <tbody>
@@ -1213,9 +1178,6 @@ export function EvidencePanel({
                         <td className="py-4 px-6 text-center text-[#00aeef]">{stat.threeKs}</td>
                         <td className="py-4 px-6 text-center text-purple-400">{stat.fourKs}</td>
                         <td className="py-4 px-6 text-center text-yellow-400">{stat.aces}</td>
-                        <td className="py-4 px-6 text-center">
-                          <span className="font-semibold text-green-400">{stat.impactScore}</span>
-                        </td>
                       </tr>
                     )
                   })}
@@ -1301,13 +1263,6 @@ export function EvidencePanel({
         </section>
       )}
 
-      {/* Evidence Metadata */}
-      {data.evidenceMeta && (
-        <div className="text-xs text-gray-500 text-right">
-          Evidence extracted: {new Date(data.evidenceMeta.extractedAt).toLocaleString()} •
-          Version: {data.evidenceMeta.version}
-        </div>
-      )}
     </div>
   )
 }

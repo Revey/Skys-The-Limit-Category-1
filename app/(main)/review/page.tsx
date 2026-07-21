@@ -9,6 +9,8 @@ import { connectToDB } from '@/lib/db'
 import { getFocusTeam } from '@/lib/focusTeam'
 import { normalizeTeamName } from '@/lib/teamUtils'
 import { Match } from '@/models/Match'
+import { getVctFilter, tournamentIdsFor } from '@/lib/vctFilter'
+import { stageLabel, tournamentLabel } from '@/lib/tournaments'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,11 +25,16 @@ interface ProjectedReviewSeries {
 
 export default async function ReviewPage() {
   const focusTeam = getFocusTeam(await cookies())
+  const vct = getVctFilter(await cookies())
+  const vctIds = tournamentIdsFor(vct)
   const focusTeamName = normalizeTeamName(focusTeam.teamName)
   await connectToDB()
 
   const matches = await Match.find(
-    { 'analytics.evidence_v1.derived.mapsStats.teamId': focusTeam.teamId },
+    {
+      'analytics.evidence_v1.derived.mapsStats.teamId': focusTeam.teamId,
+      ...(vctIds ? { tournamentId: { $in: vctIds } } : {}),
+    },
     {
       gridSeriesId: 1,
       map: 1,
@@ -57,6 +64,15 @@ export default async function ReviewPage() {
     }]
   })
   const items = computeReviewQueue(seriesList, focusTeam.teamId)
+  const activeFilterLabel = vct.year !== 'all' && vct.stage !== 'all'
+    ? (vctIds?.[0]
+      ? tournamentLabel(vctIds[0])
+      : `VCT ${vct.year} Americas ${stageLabel(vct.stage)}`)
+    : vct.year !== 'all'
+      ? `VCT ${vct.year} Americas`
+      : vct.stage !== 'all'
+        ? `${tournamentLabel()} ${stageLabel(vct.stage)}`
+        : tournamentLabel()
 
   return (
     <main className="min-h-screen px-6 pb-12 pt-24">
@@ -74,7 +90,7 @@ export default async function ReviewPage() {
           <div className="card p-10 text-center">
             <h2 className="text-xl font-semibold text-white">No series available</h2>
             <p className="mt-2 text-sm text-gray-400">
-              No recent evidence was found for {focusTeamName}.
+              No recent evidence was found for {focusTeamName} in {activeFilterLabel}. Clear the year/stage filter to see more.
             </p>
           </div>
         ) : (

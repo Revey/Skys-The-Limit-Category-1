@@ -1,24 +1,16 @@
-import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { connectToDB } from '@/lib/db'
 import { Match, type MatchDocument } from '@/models/Match'
-import { TeamLogo } from '@/components/ui/TeamLogo'
+import { OpponentList, type OpponentRow } from '@/components/matches/OpponentList'
 import { normalizeTeamName, getTeamKey } from '@/lib/teamUtils'
 import { getMapsStats } from '@/lib/types/evidence'
 import { getFocusTeam } from '@/lib/focusTeam'
+import { getVctFilter, tournamentIdsFor } from '@/lib/vctFilter'
+import { stageLabel, tournamentLabel } from '@/lib/tournaments'
 
 export const dynamic = 'force-dynamic'
 
-interface OpponentStats {
-  name: string
-  seriesCount: number
-  seriesWins: number
-  seriesLosses: number
-  mapsWon: number
-  mapsLost: number
-}
-
-function getOpponentStats(matches: MatchDocument[], focusTeamId: string): OpponentStats[] {
+function getOpponentStats(matches: MatchDocument[], focusTeamId: string): OpponentRow[] {
   const focusTeamMatches = matches.filter(match => {
     const mapsStats = getMapsStats(match.analytics?.evidence_v1)
     if (mapsStats.length === 0) return false
@@ -33,6 +25,9 @@ function getOpponentStats(matches: MatchDocument[], focusTeamId: string): Oppone
     seriesLosses: number
     mapsWon: number
     mapsLost: number
+    latestGridSeriesId: string
+    latestTournamentId: string
+    latestResult: 'W' | 'L'
   }>()
 
   for (const match of focusTeamMatches) {
@@ -61,7 +56,10 @@ function getOpponentStats(matches: MatchDocument[], focusTeamId: string): Oppone
         seriesWins: 0,
         seriesLosses: 0,
         mapsWon: 0,
-        mapsLost: 0
+        mapsLost: 0,
+        latestGridSeriesId: '',
+        latestTournamentId: '',
+        latestResult: 'L',
       })
     }
 
@@ -100,6 +98,15 @@ function getOpponentStats(matches: MatchDocument[], focusTeamId: string): Oppone
       } else if (oppMapsWon > c9MapsWon) {
         opponent.seriesLosses++
       }
+
+      const isLatestSeries = !opponent.latestGridSeriesId
+        || Number.parseInt(seriesId, 10) > Number.parseInt(opponent.latestGridSeriesId, 10)
+
+      if (isLatestSeries) {
+        opponent.latestGridSeriesId = seriesId
+        opponent.latestTournamentId = match.tournamentId ?? ''
+        opponent.latestResult = c9MapsWon > oppMapsWon ? 'W' : 'L'
+      }
     }
   }
 
@@ -111,20 +118,32 @@ function getOpponentStats(matches: MatchDocument[], focusTeamId: string): Oppone
       seriesLosses: stats.seriesLosses,
       mapsWon: stats.mapsWon,
       mapsLost: stats.mapsLost,
+      latestTournamentId: stats.latestTournamentId,
+      latestResult: stats.latestResult,
     }))
-    .sort((a, b) => b.seriesCount - a.seriesCount)
+    .sort((a, b) => (
+      Number.parseInt(b.latestTournamentId, 10) - Number.parseInt(a.latestTournamentId, 10)
+    ))
 }
 
 export default async function MatchesPage() {
   // await requireAuth()
   const focusTeam = getFocusTeam(await cookies())
+  const vct = getVctFilter(await cookies())
+  const vctIds = tournamentIdsFor(vct)
   await connectToDB()
 
   const matches = (await Match.aggregate([
-    { $match: { 'analytics.evidence_v1': { $exists: true } } },
+    {
+      $match: {
+        'analytics.evidence_v1': { $exists: true },
+        ...(vctIds ? { tournamentId: { $in: vctIds } } : {}),
+      },
+    },
     {
       $project: {
         gridSeriesId: 1,
+        tournamentId: 1,
         'analytics.evidence_v1.derived.mapsStats': 1
       }
     },
@@ -132,6 +151,15 @@ export default async function MatchesPage() {
   ])) as unknown as MatchDocument[]
 
   const opponents = getOpponentStats(matches, focusTeam.teamId)
+  const activeFilterLabel = vct.year !== 'all' && vct.stage !== 'all'
+    ? (vctIds?.[0]
+      ? tournamentLabel(vctIds[0])
+      : `VCT ${vct.year} Americas ${stageLabel(vct.stage)}`)
+    : vct.year !== 'all'
+      ? `VCT ${vct.year} Americas`
+      : vct.stage !== 'all'
+        ? `${tournamentLabel()} ${stageLabel(vct.stage)}`
+        : tournamentLabel()
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-6">
@@ -144,76 +172,11 @@ export default async function MatchesPage() {
           </p>
         </div>
 
-        {/* Opponent Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {opponents.map((opponent, index) => {
-            const winRate = opponent.seriesCount > 0 
-              ? ((opponent.seriesWins / opponent.seriesCount) * 100).toFixed(0) 
-              : '0'
-            const isPositive = opponent.seriesWins > opponent.seriesLosses
-
-            return (
-              <Link
-                key={opponent.name}
-                href={`/matches/opponent/${encodeURIComponent(opponent.name)}`}
-                className="card card-hover p-6 cursor-pointer group animate-fade-in-up"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                {/* Logo */}
-                <div className="mb-4 flex justify-center">
-                  <TeamLogo teamName={opponent.name} size="lg" />
-                </div>
-
-                {/* Team Name */}
-                <h3 className="text-center text-lg font-semibold text-white mb-4 group-hover:text-[#00aeef] transition-colors">
-                  {opponent.name}
-                </h3>
-
-                {/* Stats */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400 text-sm">Series</span>
-                    <span className={isPositive ? 'text-green-400' : 'text-red-400'}>
-                      {opponent.seriesWins}W - {opponent.seriesLosses}L
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400 text-sm">Maps</span>
-                    <span className="text-[#00aeef]">
-                      {opponent.mapsWon} - {opponent.mapsLost}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-800">
-                    <span className="text-gray-400 text-sm">Series played</span>
-                    <span className="text-gray-300">{opponent.seriesCount}</span>
-                  </div>
-
-                  {/* Win Rate Bar */}
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-400 text-xs">Win Rate</span>
-                      <span className="text-xs text-gray-300">{winRate}%</span>
-                    </div>
-                    <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className={`h-full transition-all duration-1000 ${
-                          isPositive
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                            : 'bg-gradient-to-r from-red-500 to-rose-500'
-                        }`}
-                        style={{ width: `${winRate}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
+        {opponents.length > 0 && <OpponentList rows={opponents} />}
 
         {opponents.length === 0 && (
           <div className="text-center py-20 text-gray-500">
-            No matches found for {focusTeam.teamName}.
+            No matches found for {focusTeam.teamName} in {activeFilterLabel}. Clear the year/stage filter to see more.
           </div>
         )}
       </div>

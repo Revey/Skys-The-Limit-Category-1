@@ -10,6 +10,7 @@ import { aggregateTeamTendencies } from '@/lib/analytics/aggregateTeamTendencies
 import { getTeamSeriesDerived } from '@/lib/analytics/getTeamSeriesDerived'
 import { RoundTypeScorecard, type ScorecardPercentiles } from '@/components/coaching/RoundTypeScorecard'
 import { getLeagueBenchmarks, type MetricKey } from '@/lib/analytics/leagueBenchmarks'
+import { getVctFilter, tournamentIdsFor } from '@/lib/vctFilter'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +46,8 @@ export default async function DashboardPage() {
   await connectToDB()
 
   const focusTeam = getFocusTeam(await cookies())
-  const tendencySeriesPromise = getTeamSeriesDerived(focusTeam.teamId)
+  const vctIds = tournamentIdsFor(getVctFilter(await cookies()))
+  const tendencySeriesPromise = getTeamSeriesDerived(focusTeam.teamId, vctIds)
 
   // Prefer team-scoped stats, with a backward-compatible fallback for the legacy default document.
   let dashboardStatsDoc = await DashboardStatsModel.findOne({ teamId: focusTeam.teamId }).lean() as DashboardStatsDocument | null

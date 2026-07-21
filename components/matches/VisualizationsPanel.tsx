@@ -9,7 +9,6 @@ import KillHeatmap from '@/components/visualizations/KillHeatmap'
 import PlayerComparisonCard from '@/components/visualizations/PlayerComparisonCard'
 import RoundTimeline from '@/components/visualizations/RoundTimeline'
 import SeriesNarrativeTimeline from '@/components/visualizations/SeriesNarrativeTimeline'
-import WinProbabilityTimeline from '@/components/visualizations/WinProbabilityTimeline'
 import { computeHighlights } from '@/lib/analytics/computeHighlights'
 import {
   computePlayerCards,
@@ -255,43 +254,6 @@ export function VisualizationsPanel({
             manAdvantageStats={evidence.derived?.manAdvantageStats}
           />
 
-          <WinProbabilityTimeline
-            rounds={filteredData.rounds.map(round => {
-              const clutch = evidence.clutchSituations?.find(situation =>
-                situation.won === true &&
-                situation.roundNumber === round.roundNumber &&
-                situation.gameId === round.gameId
-              )
-              const critical = evidence.derived?.criticalRounds?.some(stat =>
-                stat.gameId === round.gameId &&
-                stat.topReviewRounds.some(reviewRound => reviewRound.roundNumber === round.roundNumber)
-              )
-
-              return {
-                roundNumber: round.roundNumber,
-                gameId: round.gameId,
-                winnerTeamId: round.winnerTeamId,
-                clutch: clutch ? {
-                  playerName: clutch.playerName || `Player ${clutch.playerId}`,
-                  situation: clutch.situation,
-                  isFocusTeam: clutch.teamId === teamId,
-                } : undefined,
-                isCritical: critical,
-              }
-            })}
-            teamId={teamId}
-            teamName={teamNames.team}
-            opponentName={teamNames.opponent}
-            games={filteredData.games}
-          />
-
-          {filteredHighlights.length > 0 && (
-            <HighlightReel
-              highlights={filteredHighlights.slice(0, 5)}
-              focusTeamName={teamNames.team}
-              opponentName={teamNames.opponent}
-            />
-          )}
         </TabsContent>
 
         <TabsContent value="heatmap">

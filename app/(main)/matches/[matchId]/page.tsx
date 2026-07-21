@@ -6,45 +6,12 @@ import { MatchDetailClient } from './MatchDetailClient'
 import { getMapsStats } from '@/lib/types/evidence'
 import { getFocusTeam } from '@/lib/focusTeam'
 import { normalizeTeamName } from '@/lib/teamUtils'
-
-// Tournament name mapping based on series ID ranges
-function getTournamentName(seriesId: string): string {
-  const seriesNum = parseInt(seriesId)
-  
-  if (seriesNum >= 2843060 && seriesNum <= 2843071) return 'VCT 2025 Americas Split 2'
-  if (seriesNum >= 2819676 && seriesNum <= 2819705) return 'VCT 2025 Americas Stage 2'
-  if (seriesNum >= 2775953 && seriesNum <= 2789396) return 'VCT 2025 Americas Stage 1'
-  if (seriesNum >= 2748743 && seriesNum <= 2748766) return 'VCT 2025 Americas Kickoff'
-  if (seriesNum >= 2681809 && seriesNum <= 2681847) return 'VCT 2024 Americas Playoffs'
-  if (seriesNum >= 2653969 && seriesNum <= 2654052) return 'VCT 2024 Americas Stage 2'
-  if (seriesNum >= 2648624 && seriesNum <= 2648639) return 'VCT 2024 Americas Stage 1'
-  if (seriesNum >= 2637961 && seriesNum <= 2637963) return 'VCT 2024 Americas Stage 1'
-  if (seriesNum >= 2629390 && seriesNum <= 2629407) return 'VCT 2024 Americas Kickoff'
-  
-  return 'VCT Americas'
-}
-
-// Estimate match date from series ID (VCT schedule approximation)
-function estimateMatchDate(seriesId: string): string {
-  const seriesNum = parseInt(seriesId)
-  
-  if (seriesNum >= 2843060) return 'Dec 2025'
-  if (seriesNum >= 2819676) return 'Nov 2025'
-  if (seriesNum >= 2775953) return 'Sep 2025'
-  if (seriesNum >= 2748743) return 'Feb 2025'
-  if (seriesNum >= 2681809) return 'Aug 2024'
-  if (seriesNum >= 2653969) return 'Jun 2024'
-  if (seriesNum >= 2648624) return 'Apr 2024'
-  if (seriesNum >= 2637961) return 'Mar 2024'
-  if (seriesNum >= 2629390) return 'Feb 2024'
-  
-  return '2024'
-}
+import { getTournamentMeta } from '@/lib/tournaments'
 
 export const dynamic = 'force-dynamic'
 
 type Props = { params: Promise<{ matchId: string }> }
-type ProjectedMatch = Pick<MatchDocument, '_id' | 'gridSeriesId' | 'analytics'>
+type ProjectedMatch = Pick<MatchDocument, '_id' | 'gridSeriesId' | 'tournamentId' | 'analytics'>
 
 export default async function MatchDetailPage({ params }: Props) {
   // await requireAuth()
@@ -55,6 +22,7 @@ export default async function MatchDetailPage({ params }: Props) {
   const match = (await Match.findById(matchId, {
     _id: 1,
     gridSeriesId: 1,
+    tournamentId: 1,
     'analytics.evidence_v1': 1,
   }).lean()) as unknown as ProjectedMatch | null
 
@@ -197,14 +165,15 @@ export default async function MatchDetailPage({ params }: Props) {
 
   // Serialize the data for client component
   const seriesId = match.gridSeriesId || ''
+  const tournamentMeta = getTournamentMeta(match.tournamentId)
   const seriesData = {
     matchId: String(match._id),
     seriesId,
     focusTeamId: focusTeam.teamId,
     focusTeamName: focusTeam.teamName,
     opponentName,
-    tournamentName: getTournamentName(seriesId),
-    matchDate: estimateMatchDate(seriesId),
+    tournamentName: tournamentMeta?.label ?? 'VCT Americas',
+    matchDate: tournamentMeta?.month ?? '2024',
     c9MapsWon,
     opponentMapsWon,
     seriesWon,

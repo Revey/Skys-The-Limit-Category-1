@@ -4,16 +4,24 @@ import type { SeriesDerivedInput } from '@/lib/analytics/aggregateTeamTendencies
 
 export interface TeamSeriesDerived extends SeriesDerivedInput {
   gridSeriesId?: string
+  tournamentId?: string
   date?: Date
   derived?: Partial<EvidenceDerived>
 }
 
-export async function getTeamSeriesDerived(teamId: string): Promise<TeamSeriesDerived[]> {
+export async function getTeamSeriesDerived(
+  teamId: string,
+  tournamentIds?: string[] | null
+): Promise<TeamSeriesDerived[]> {
   const matches = await Match.find(
-    { 'analytics.evidence_v1.derived.mapsStats.teamId': teamId },
+    {
+      'analytics.evidence_v1.derived.mapsStats.teamId': teamId,
+      ...(tournamentIds?.length ? { tournamentId: { $in: tournamentIds } } : {}),
+    },
     {
       map: 1,
       gridSeriesId: 1,
+      tournamentId: 1,
       date: 1,
       'analytics.evidence_v1.derived': 1,
     }
@@ -23,6 +31,7 @@ export async function getTeamSeriesDerived(teamId: string): Promise<TeamSeriesDe
     const projected = match as unknown as {
       map?: string
       gridSeriesId?: string
+      tournamentId?: string
       date?: Date
       analytics?: { evidence_v1?: { derived?: Partial<EvidenceDerived> } }
     }
@@ -30,6 +39,7 @@ export async function getTeamSeriesDerived(teamId: string): Promise<TeamSeriesDe
     return {
       map: projected.map,
       gridSeriesId: projected.gridSeriesId,
+      tournamentId: projected.tournamentId,
       date: projected.date,
       derived: projected.analytics?.evidence_v1?.derived,
     }
